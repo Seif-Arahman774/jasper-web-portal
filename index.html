@@ -5,7 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jasper Industries API</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    
     <script type="module">
         // Ensure global app, db, auth, and other Firebase services are defined
         window.app = null;
@@ -716,536 +718,6 @@
             if (logoutButton) {
                 logoutButton.addEventListener('click', window.handleUserLogout);
             }
-            setupTabs('inq');
-            setupInquiryForm();
-            listenForInquiries();
-
-            // NEW: Admin button listeners
-            if (isAdmin) {
-                setupAdminConsole();
-            }
-        }
-
-        /**
-         * Clears the app container and renders the Sourcing Dashboard.
-         */
-        function renderSourcingPage() {
-            currentView = 'source';
-            const container = document.getElementById('app-container');
-            if (!container) return;
-
-            container.innerHTML = `
-					<div class="min-h-screen bg-gray-100">
-						<header class="bg-white shadow-md sticky top-0 z-10">
-							<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-								<div class="flex justify-between items-center h-16">
-									<div class="flex items-center">
-										<img src="${JASPER_LOGO_URL}" alt="Jasper Logo" class="h-10" onerror="this.alt='Jasper'; this.src='https://placehold.co/150x40/1e40af/FFFFFF?text=Jasper';">
-										<span class="ml-3 text-xl font-semibold text-gray-700">Sourcing Portal</span>
-                                        <span class="ml-4 text-sm font-light text-gray-500">(${window.currentUserName.toUpperCase()})</span>
-									</div>
-									<button id="logoutButton" class="text-sm font-medium text-red-600 hover:text-red-800 transition duration-150">
-										Logout
-									</button>
-								</div>
-							</div>
-						</header>
-
-						<main class="max-w-screen-xl mx-auto p-4 sm:p-6 lg:p-8">
-							<div class="border-b border-gray-200 mb-6">
-								<nav class="-mb-px flex space-x-8" aria-label="Tabs">
-									<button id="tab-dashboard-source" class="tab-button active text-gray-500 hover:text-gray-700 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-										Sourcing Dashboard
-									</button>
-									<button id="tab-form-source" class="tab-button text-gray-500 hover:text-gray-700 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent">
-										Update Inquiry Form
-									</button>
-								</nav>
-							</div>
-
-							<div>
-								<div id="content-dashboard-source" class="tab-content active">
-									<div class="mb-4">
-										<input type="text" id="search-bar-source" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Search by Ref #, Client, Material, or Supplier...">
-									</div>
-									<h2 class="text-2xl font-semibold text-gray-800 mb-4">Sourcing Dashboard</h2>
-									<div class="bg-white shadow-lg rounded-lg overflow-hidden">
-										<div class="overflow-x-auto">
-											<table class="min-w-full divide-y divide-gray-200">
-												<thead class="bg-gray-50">
-													<tr>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ref #</th>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material</th>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sourcing Supplier</th>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sourcing Price</th>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client PO</th>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client Payment</th>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Import Permit</th>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier PO</th>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Certificates</th>
-													</tr>
-												</thead>
-												<tbody id="sourcing-table-body" class="bg-white divide-y divide-gray-200">
-													<tr>
-														<td colspan="11" class="px-6 py-10 text-center text-gray-500">
-															Loading inquiries...
-														</td>
-													</tr>
-												</tbody>
-											</table>
-										</div>
-									</div>
-								</div>
-
-								<div id="content-form-source" class="tab-content">
-									<h2 class="text-2xl font-semibold text-gray-800 mb-4">Update Sourcing Details</h2>
-									<div class="bg-white shadow-lg rounded-lg p-6 md:p-8">
-										<form id="new-sourcing-form" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-											<div class="md:col-span-1">
-												<label for="sourcingRefNum" class="block text-sm font-medium text-gray-700">Inquiry Ref #</label>
-												<input type="number" id="sourcingRefNum" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent" placeholder="e.g., 2" required>
-											</div>
-											<div class="md:col-span-2">
-												</div>
-
-											<hr class="md:col-span-3 my-2">
-
-											<div class="md:col-span-1">
-												<label for="sourcingSupplier" class="block text-sm font-medium text-gray-700">Supplier</label>
-												<input type="text" id="sourcingSupplier" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent">
-											</div>
-											<div class="md:col-span-1">
-												<label for="sourcingPrice" class="block text-sm font-medium text-gray-700">Price</label>
-												<input type="text" id="sourcingPrice" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent">
-											</div>
-											<div class="md:col-span-1">
-												<label for="sourcingPaymentMethod" class="block text-sm font-medium text-gray-700">Payment Method</label>
-												<input type="text" id="sourcingPaymentMethod" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent">
-											</div>
-											
-											<hr class="md:col-span-3 my-2">
-											
-											<div class="md:col-span-1">
-												<label for="sourcingClientPO" class="block text-sm font-medium text-gray-700">Client PO</label>
-												<select id="sourcingClientPO" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
-													<option value="No">No</option>
-													<option value="Yes">Yes</option>
-												</select>
-											</div>
-											<div class="md:col-span-1">
-												<label for="sourcingClientPayment" class="block text-sm font-medium text-gray-700">Client Payment</label>
-												<select id="sourcingClientPayment" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
-													<option value="Not Required">Not Required</option>
-													<option value="Required">Required</option>
-													<option value="Collected">Collected</option>
-												</select>
-											</div>
-											<div class="md:col-span-1">
-												<label for="sourcingImportPermit" class="block text-sm font-medium text-gray-700">Import Permit</label>
-												<select id="sourcingImportPermit" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
-													<option value="Not Required">Not Required</option>
-													<option value="Pending">Pending</option>
-													<option value="Completed">Completed</option>
-												</select>
-											</div>
-											<div class="md:col-span-1">
-												<label for="sourcingSupplierPO" class="block text-sm font-medium text-gray-700">Supplier PO</label>
-												<select id="sourcingSupplierPO" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
-													<option value="Not Yet">Not Yet</option>
-													<option value="Sent">Sent</option>
-												</select>
-											</div>
-
-											<hr class="md:col-span-3 my-2">
-
-											<div class="md:col-span-1">
-												<label for="sourcingCOA" class="block text-sm font-medium text-gray-700">COA (File Link)</label>
-												<input type="text" id="sourcingCOA" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Paste link to file...">
-											</div>
-											<div class="md:col-span-1">
-												<label for="sourcingLicense" class="block text-sm font-medium text-gray-700">License (File Link)</label>
-												<input type="text" id="sourcingLicense" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent">
-											</div>
-											<div class="md:col-span-1">
-												<label for="sourcingQualityCert" class="block text-sm font-medium text-gray-700">Quality Certificate (GMP/ISO)</label>
-												<input type="text" id="sourcingQualityCert" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent">
-											</div>
-
-											<div class="md:col-span-3 flex justify-end items-center gap-4 mt-4">
-												<span id="sourcing-form-message" class="text-sm"></span>
-												<button type="submit" id="submit-sourcing-form-btn" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-800 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-800">
-													Update Inquiry
-												</button>
-											</div>
-										</form>
-									</div>
-								</div>
-							</div>
-						</main>
-					</div>
-					
-					<div id="sourcingModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-						<div class="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
-							<div class="flex justify-between items-center border-b pb-3 mb-4">
-								<h3 class="text-2xl font-semibold text-gray-900">Sourcing Details (Ref #: <span id="modal-sourcing-ref-num"></span>)</h3>
-								<button id="modal-sourcing-close-btn" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center">
-									<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
-								</button>
-							</div>
-							<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-								<div class="md:col-span-1">
-									<h4 class="text-lg font-semibold text-gray-800 mb-2">Original Inquiry</h4>
-									<dl class="divide-y divide-gray-200">
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Submitted By</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-submittedBy"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Client</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-clientName"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Org</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-organization"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Material</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-material"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Quantity</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-quantity"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Target Price</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-targetPrice"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Specs</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 whitespace-pre-wrap" id="modal-sourcing-specifications"></dd></div>
-									</dl>
-									<hr class="my-4">
-									<h4 class="text-lg font-semibold text-gray-800 mb-2">Sourcing Data</h4>
-									<dl class="divide-y divide-gray-200">
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Supplier</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-supplier"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Price</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-price"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Payment</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-paymentMethod"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">COA</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-coa"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">License</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-license"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Certificate</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-quality"></dd></div>
-									</dl>
-								</div>
-
-								<div class="md:col-span-1">
-									<h4 class="text-lg font-semibold text-gray-800 mb-2">Update Sourcing Status</h4>
-									<div class="space-y-4">
-										<div>
-											<label for="modal-sourcingClientPO" class="block text-sm font-medium text-gray-700">Client PO</label>
-											<select id="modal-sourcingClientPO" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
-												<option value="No">No</option>
-												<option value="Yes">Yes</option>
-											</select>
-										</div>
-										<div>
-											<label for="modal-sourcingClientPayment" class="block text-sm font-medium text-gray-700">Client Payment</label>
-											<select id="modal-sourcingClientPayment" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
-												<option value="Not Required">Not Required</option>
-												<option value="Required">Required</option>
-												<option value="Collected">Collected</option>
-											</select>
-										</div>
-										<div>
-											<label for="modal-sourcingImportPermit" class="block text-sm font-medium text-gray-700">Import Permit</label>
-											<select id="modal-sourcingImportPermit" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
-												<option value="Not Required">Not Required</option>
-												<option value="Pending">Pending</option>
-												<option value="Completed">Completed</option>
-											</select>
-										</div>
-										<div>
-											<label for="modal-sourcingSupplierPO" class="block text-sm font-medium text-gray-700">Supplier PO</label>
-											<select id="modal-sourcingSupplierPO" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
-												<option value="Not Yet">Not Yet</option>
-												<option value="Sent">Sent</option>
-											</select>
-										</div>
-									</div>
-									<button id="modal-sourcing-status-save" class="w-full mt-6 px-4 py-2 bg-blue-800 text-white text-sm font-medium rounded-md hover:bg-blue-700">Save Statuses</button>
-									<span id="modal-sourcing-status-message" class="text-sm text-green-600 mt-2 block"></span>
-
-                                    <button id="modal-sourcing-delete-btn" class="w-full mt-4 px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-md hover:bg-red-600">
-                                        <span id="modal-sourcing-delete-text">Delete Inquiry</span>
-                                    </button>
-                                    </div>
-
-								<div class="bg-gray-50 p-4 rounded-lg flex flex-col h-full max-h-[70vh] md:col-span-1">
-									<h4 class="text-lg font-semibold text-gray-800 mb-2">Notes</h4>
-									<div id="modal-sourcing-notes-list" class="flex-grow overflow-y-auto space-y-3 mb-4 pr-2">
-										<p class="text-gray-500 text-sm">No notes yet.</p>
-									</div>
-									<div class="flex-shrink-0">
-										<textarea id="modal-sourcing-new-note" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800" rows="3" placeholder="Add a new note..."></textarea>
-										<button id="modal-sourcing-note-add" class="w-full mt-2 px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-500">Add Note</button>
-										<span id="modal-sourcing-note-message" class="text-sm text-green-600 mt-2 block"></span>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				`;
-
-            // Add event listeners for the new page
-            const logoutButton = document.getElementById('logoutButton');
-            if (logoutButton) {
-                logoutButton.addEventListener('click', window.handleUserLogout);
-            }
-            setupTabs('inq');
-            setupInquiryForm();
-            listenForInquiries();
-
-            // NEW: Admin button listeners
-            if (isAdmin) {
-                setupAdminConsole();
-            }
-        }
-
-        /**
-         * Clears the app container and renders the Sourcing Dashboard.
-         */
-        function renderSourcingPage() {
-            currentView = 'source';
-            const container = document.getElementById('app-container');
-            if (!container) return;
-
-            container.innerHTML = `
-					<div class="min-h-screen bg-gray-100">
-						<header class="bg-white shadow-md sticky top-0 z-10">
-							<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-								<div class="flex justify-between items-center h-16">
-									<div class="flex items-center">
-										<img src="${JASPER_LOGO_URL}" alt="Jasper Logo" class="h-10" onerror="this.alt='Jasper'; this.src='https://placehold.co/150x40/1e40af/FFFFFF?text=Jasper';">
-										<span class="ml-3 text-xl font-semibold text-gray-700">Sourcing Portal</span>
-                                        <span class="ml-4 text-sm font-light text-gray-500">(${window.currentUserName.toUpperCase()})</span>
-									</div>
-									<button id="logoutButton" class="text-sm font-medium text-red-600 hover:text-red-800 transition duration-150">
-										Logout
-									</button>
-								</div>
-							</div>
-						</header>
-
-						<main class="max-w-screen-xl mx-auto p-4 sm:p-6 lg:p-8">
-							<div class="border-b border-gray-200 mb-6">
-								<nav class="-mb-px flex space-x-8" aria-label="Tabs">
-									<button id="tab-dashboard-source" class="tab-button active text-gray-500 hover:text-gray-700 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-										Sourcing Dashboard
-									</button>
-									<button id="tab-form-source" class="tab-button text-gray-500 hover:text-gray-700 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent">
-										Update Inquiry Form
-									</button>
-								</nav>
-							</div>
-
-							<div>
-								<div id="content-dashboard-source" class="tab-content active">
-									<div class="mb-4">
-										<input type="text" id="search-bar-source" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Search by Ref #, Client, Material, or Supplier...">
-									</div>
-									<h2 class="text-2xl font-semibold text-gray-800 mb-4">Sourcing Dashboard</h2>
-									<div class="bg-white shadow-lg rounded-lg overflow-hidden">
-										<div class="overflow-x-auto">
-											<table class="min-w-full divide-y divide-gray-200">
-												<thead class="bg-gray-50">
-													<tr>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ref #</th>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material</th>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sourcing Supplier</th>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sourcing Price</th>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client PO</th>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client Payment</th>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Import Permit</th>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier PO</th>
-														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Certificates</th>
-													</tr>
-												</thead>
-												<tbody id="sourcing-table-body" class="bg-white divide-y divide-gray-200">
-													<tr>
-														<td colspan="11" class="px-6 py-10 text-center text-gray-500">
-															Loading inquiries...
-														</td>
-													</tr>
-												</tbody>
-											</table>
-										</div>
-									</div>
-								</div>
-
-								<div id="content-form-source" class="tab-content">
-									<h2 class="text-2xl font-semibold text-gray-800 mb-4">Update Sourcing Details</h2>
-									<div class="bg-white shadow-lg rounded-lg p-6 md:p-8">
-										<form id="new-sourcing-form" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-											<div class="md:col-span-1">
-												<label for="sourcingRefNum" class="block text-sm font-medium text-gray-700">Inquiry Ref #</label>
-												<input type="number" id="sourcingRefNum" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent" placeholder="e.g., 2" required>
-											</div>
-											<div class="md:col-span-2">
-												</div>
-
-											<hr class="md:col-span-3 my-2">
-
-											<div class="md:col-span-1">
-												<label for="sourcingSupplier" class="block text-sm font-medium text-gray-700">Supplier</label>
-												<input type="text" id="sourcingSupplier" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent">
-											</div>
-											<div class="md:col-span-1">
-												<label for="sourcingPrice" class="block text-sm font-medium text-gray-700">Price</label>
-												<input type="text" id="sourcingPrice" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent">
-											</div>
-											<div class="md:col-span-1">
-												<label for="sourcingPaymentMethod" class="block text-sm font-medium text-gray-700">Payment Method</label>
-												<input type="text" id="sourcingPaymentMethod" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent">
-											</div>
-											
-											<hr class="md:col-span-3 my-2">
-											
-											<div class="md:col-span-1">
-												<label for="sourcingClientPO" class="block text-sm font-medium text-gray-700">Client PO</label>
-												<select id="sourcingClientPO" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
-													<option value="No">No</option>
-													<option value="Yes">Yes</option>
-												</select>
-											</div>
-											<div class="md:col-span-1">
-												<label for="sourcingClientPayment" class="block text-sm font-medium text-gray-700">Client Payment</label>
-												<select id="sourcingClientPayment" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
-													<option value="Not Required">Not Required</option>
-													<option value="Required">Required</option>
-													<option value="Collected">Collected</option>
-												</select>
-											</div>
-											<div class="md:col-span-1">
-												<label for="sourcingImportPermit" class="block text-sm font-medium text-gray-700">Import Permit</label>
-												<select id="sourcingImportPermit" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
-													<option value="Not Required">Not Required</option>
-													<option value="Pending">Pending</option>
-													<option value="Completed">Completed</option>
-												</select>
-											</div>
-											<div class="md:col-span-1">
-												<label for="sourcingSupplierPO" class="block text-sm font-medium text-gray-700">Supplier PO</label>
-												<select id="sourcingSupplierPO" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
-													<option value="Not Yet">Not Yet</option>
-													<option value="Sent">Sent</option>
-												</select>
-											</div>
-
-											<hr class="md:col-span-3 my-2">
-
-											<div class="md:col-span-1">
-												<label for="sourcingCOA" class="block text-sm font-medium text-gray-700">COA (File Link)</label>
-												<input type="text" id="sourcingCOA" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Paste link to file...">
-											</div>
-											<div class="md:col-span-1">
-												<label for="sourcingLicense" class="block text-sm font-medium text-gray-700">License (File Link)</label>
-												<input type="text" id="sourcingLicense" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent">
-											</div>
-											<div class="md:col-span-1">
-												<label for="sourcingQualityCert" class="block text-sm font-medium text-gray-700">Quality Certificate (GMP/ISO)</label>
-												<input type="text" id="sourcingQualityCert" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent">
-											</div>
-
-											<div class="md:col-span-3 flex justify-end items-center gap-4 mt-4">
-												<span id="sourcing-form-message" class="text-sm"></span>
-												<button type="submit" id="submit-sourcing-form-btn" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-800 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-800">
-													Update Inquiry
-												</button>
-											</div>
-										</form>
-									</div>
-								</div>
-							</div>
-						</main>
-					</div>
-					
-					<div id="sourcingModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-						<div class="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
-							<div class="flex justify-between items-center border-b pb-3 mb-4">
-								<h3 class="text-2xl font-semibold text-gray-900">Sourcing Details (Ref #: <span id="modal-sourcing-ref-num"></span>)</h3>
-								<button id="modal-sourcing-close-btn" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center">
-									<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
-								</button>
-							</div>
-							<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-								<div class="md:col-span-1">
-									<h4 class="text-lg font-semibold text-gray-800 mb-2">Original Inquiry</h4>
-									<dl class="divide-y divide-gray-200">
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Submitted By</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-submittedBy"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Client</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-clientName"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Org</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-organization"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Material</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-material"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Quantity</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-quantity"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Target Price</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-targetPrice"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Specs</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 whitespace-pre-wrap" id="modal-sourcing-specifications"></dd></div>
-									</dl>
-									<hr class="my-4">
-									<h4 class="text-lg font-semibold text-gray-800 mb-2">Sourcing Data</h4>
-									<dl class="divide-y divide-gray-200">
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Supplier</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-supplier"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Price</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-price"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Payment</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-paymentMethod"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">COA</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-coa"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">License</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-license"></dd></div>
-										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Certificate</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-quality"></dd></div>
-									</dl>
-								</div>
-
-								<div class="md:col-span-1">
-									<h4 class="text-lg font-semibold text-gray-800 mb-2">Update Sourcing Status</h4>
-									<div class="space-y-4">
-										<div>
-											<label for="modal-sourcingClientPO" class="block text-sm font-medium text-gray-700">Client PO</label>
-											<select id="modal-sourcingClientPO" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
-												<option value="No">No</option>
-												<option value="Yes">Yes</option>
-											</select>
-										</div>
-										<div>
-											<label for="modal-sourcingClientPayment" class="block text-sm font-medium text-gray-700">Client Payment</label>
-											<select id="modal-sourcingClientPayment" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
-												<option value="Not Required">Not Required</option>
-												<option value="Required">Required</option>
-												<option value="Collected">Collected</option>
-											</select>
-										</div>
-										<div>
-											<label for="modal-sourcingImportPermit" class="block text-sm font-medium text-gray-700">Import Permit</label>
-											<select id="modal-sourcingImportPermit" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
-												<option value="Not Required">Not Required</option>
-												<option value="Pending">Pending</option>
-												<option value="Completed">Completed</option>
-											</select>
-										</div>
-										<div>
-											<label for="modal-sourcingSupplierPO" class="block text-sm font-medium text-gray-700">Supplier PO</label>
-											<select id="modal-sourcingSupplierPO" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
-												<option value="Not Yet">Not Yet</option>
-												<option value="Sent">Sent</option>
-											</select>
-										</div>
-									</div>
-									<button id="modal-sourcing-status-save" class="w-full mt-6 px-4 py-2 bg-blue-800 text-white text-sm font-medium rounded-md hover:bg-blue-700">Save Statuses</button>
-									<span id="modal-sourcing-status-message" class="text-sm text-green-600 mt-2 block"></span>
-
-                                    <button id="modal-sourcing-delete-btn" class="w-full mt-4 px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-md hover:bg-red-600">
-                                        <span id="modal-sourcing-delete-text">Delete Inquiry</span>
-                                    </button>
-                                    </div>
-
-								<div class="bg-gray-50 p-4 rounded-lg flex flex-col h-full max-h-[70vh] md:col-span-1">
-									<h4 class="text-lg font-semibold text-gray-800 mb-2">Notes</h4>
-									<div id="modal-sourcing-notes-list" class="flex-grow overflow-y-auto space-y-3 mb-4 pr-2">
-										<p class="text-gray-500 text-sm">No notes yet.</p>
-									</div>
-									<div class="flex-shrink-0">
-										<textarea id="modal-sourcing-new-note" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800" rows="3" placeholder="Add a new note..."></textarea>
-										<button id="modal-sourcing-note-add" class="w-full mt-2 px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-500">Add Note</button>
-										<span id="modal-sourcing-note-message" class="text-sm text-green-600 mt-2 block"></span>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				`;
-
-            // Add event listeners for the new page
-            const logoutButton = document.getElementById('logoutButton');
-            if (logoutButton) {
-                logoutButton.addEventListener('click', window.handleUserLogout);
-            }
             setupTabs('source');
             setupSourcingForm();
             listenForInquiries_Sourcing();
@@ -1584,3 +1056,970 @@
                         setTimeout(() => {
                             const dashboardTab = document.getElementById('tab-dashboard-source');
                             if (dashboardTab) dashboardTab.click();
+                            if (formMessage) formMessage.textContent = ""; // Clear message on tab switch
+                        }, 1500);
+                    }
+
+                } catch (error) {
+                    console.error("Error updating document: ", error);
+                    if (formMessage) {
+                        formMessage.textContent = "Error: Could not submit form.";
+                        formMessage.className = "text-sm text-red-600";
+                    }
+                    if (error.code === 'permission-denied') {
+                        if (formMessage) formMessage.textContent = "Error: You don't have permission to save data.";
+                    }
+                } finally {
+                    // Re-enable button
+                    if (submitButton) submitButton.disabled = false;
+                    if (submitButton) submitButton.textContent = "Update Inquiry";
+                }
+            });
+        }
+
+
+        /**
+         * Listens for real-time updates to the inquiries collection in Firestore
+         * FOR THE INQUIRY DASHBOARD.
+         */
+        function listenForInquiries() {
+            // Check for auth and required services
+            if (!window.db || !window.fs || !window.fs.collection || !window.fs.query || !window.fs.onSnapshot) {
+                console.error("Firestore not initialized for listener.");
+                const tableBody = document.getElementById('inquiry-table-body');
+                if (tableBody) {
+                    tableBody.innerHTML = `<tr><td colspan="10" class="px-6 py-10 text-center text-red-600">Error: Not connected to database. Please log out and back in.</td></tr>`;
+                }
+                return;
+            }
+
+            // Unsubscribe from any previous listener
+            if (window.inquiryUnsubscribe) {
+                window.inquiryUnsubscribe();
+            }
+
+            // Define path
+            const INQUIRY_COLLECTION_PATH_FULL = INQUIRY_COLLECTION_PATH(window.appId);
+
+            try {
+                const q = window.fs.query(window.fs.collection(window.db, INQUIRY_COLLECTION_PATH_FULL));
+                console.log("Attaching Firestore listener to:", INQUIRY_COLLECTION_PATH_FULL);
+
+                window.inquiryUnsubscribe = window.fs.onSnapshot(q, (querySnapshot) => {
+                    console.log("Received snapshot update (Inquiry)");
+                    allInquiries = []; // Clear local cache
+                    querySnapshot.forEach((doc) => {
+                        allInquiries.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+
+                    // Sort by refNumber, newest first.
+                    allInquiries.sort((a, b) => (b.refNumber || 0) - (a.refNumber || 0));
+
+                    console.log("Fetched inquiries:", allInquiries);
+                    filterAndRenderInquiries(); // Call filter function
+                    // Also render the recycle bin if admin is logged in
+                    if (window.currentUserName === 'admin' && currentView === 'inq') {
+                        renderRecycleBinTable(allInquiries.filter(i => i.isDeleted));
+                    }
+
+
+                }, (error) => {
+                    console.error("Error with Firestore listener: ", error);
+                    const tableBody = document.getElementById('inquiry-table-body');
+                    if (tableBody) {
+                        tableBody.innerHTML = `
+								<tr>
+									<td colspan="10" class="px-6 py-10 text-center text-red-600">
+										Error loading data: ${error.message}
+									</td>
+								</tr>
+							`;
+                    }
+                    if (error.code === 'permission-denied') {
+                        console.error("Firestore Permission Denied. Check security rules.");
+                    }
+                });
+
+                // Attach search bar listener
+                const searchBar = document.getElementById('search-bar');
+                if (searchBar) {
+                    searchBar.addEventListener('input', filterAndRenderInquiries);
+                }
+
+                // Attach modal click listener
+                const tableBody = document.getElementById('inquiry-table-body');
+                if (tableBody) {
+                    tableBody.addEventListener('click', handleInquiryTableClick);
+                }
+
+            } catch (error) {
+                console.error("Failed to attach listener:", error);
+            }
+        }
+
+        /**
+         * Listens for real-time updates to the inquiries collection in Firestore
+         * FOR THE SOURCING DASHBOARD.
+         */
+        function listenForInquiries_Sourcing() {
+            // Check for auth and required services
+            if (!window.db || !window.fs || !window.fs.collection || !window.fs.query || !window.fs.onSnapshot) {
+                console.error("Firestore not initialized for listener.");
+                const tableBody = document.getElementById('sourcing-table-body');
+                if (tableBody) {
+                    tableBody.innerHTML = `<tr><td colspan="11" class="px-6 py-10 text-center text-red-600">Error: Not connected to database. Please log out and back in.</td></tr>`;
+                }
+                return; // FIX: Was 're turn;'
+            }
+
+            // Unsubscribe from any previous listener
+            if (window.sourcingUnsubscribe) {
+                window.sourcingUnsubscribe();
+            }
+
+            // Define path
+            const INQUIRY_COLLECTION_PATH_FULL = INQUIRY_COLLECTION_PATH(window.appId);
+
+            try {
+                const q = window.fs.query(window.fs.collection(window.db, INQUIRY_COLLECTION_PATH_FULL));
+                console.log("Attaching Firestore listener to:", INQUIRY_COLLECTION_PATH_FULL);
+
+                window.sourcingUnsubscribe = window.fs.onSnapshot(q, (querySnapshot) => {
+                    console.log("Received snapshot update (Sourcing)");
+                    allInquiries = []; // Clear local cache
+                    querySnapshot.forEach((doc) => {
+                        allInquiries.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+
+                    // Sort by refNumber, newest first.
+                    allInquiries.sort((a, b) => (b.refNumber || 0) - (a.refNumber || 0));
+
+                    console.log("Fetched inquiries:", allInquiries);
+                    filterAndRenderInquiries_Sourcing(); // Call SOURCING filter function
+
+                }, (error) => {
+                    console.error("Error with Firestore listener: ", error);
+                    const tableBody = document.getElementById('sourcing-table-body');
+                    if (tableBody) {
+                        tableBody.innerHTML = `
+								<tr>
+									<td colspan="11" class="px-6 py-10 text-center text-red-600">
+										Error loading data: ${error.message}
+									</td>
+								</tr>
+							`;
+                    }
+                });
+
+                // Attach search bar listener
+                const searchBar = document.getElementById('search-bar-source');
+                if (searchBar) {
+                    searchBar.addEventListener('input', filterAndRenderInquiries_Sourcing);
+                }
+
+                // Attach modal click listener FOR SOURCING
+                const tableBody = document.getElementById('sourcing-table-body');
+                if (tableBody) {
+                    tableBody.addEventListener('click', handleSourcingTableClick);
+                }
+
+            } catch (error) {
+                console.error("Failed to attach listener:", error);
+            }
+        }
+
+
+        /**
+         * Filters the `allInquiries` array for the INQUIRY DASHBOARD.
+         */
+        function filterAndRenderInquiries() {
+            const searchBar = document.getElementById('search-bar');
+            const searchTerm = searchBar ? searchBar.value.toLowerCase() : "";
+
+            let filteredInquiries = allInquiries;
+
+            if (searchTerm) {
+                filteredInquiries = allInquiries.filter(inq => {
+                    const formattedDate = formatTimestamp(inq.timestamp).toLowerCase();
+                    return (inq.refNumber?.toString().includes(searchTerm) ||
+                        (inq.clientName || "").toLowerCase().includes(searchTerm) ||
+                        (inq.material || "").toLowerCase().includes(searchTerm) ||
+                        (inq.organization || "").toLowerCase().includes(searchTerm) ||
+                        (inq.status || "").toLowerCase().includes(searchTerm) ||
+                        formattedDate.includes(searchTerm));
+                });
+            }
+
+            // Filter out soft-deleted items from the main dashboard
+            const finalInquiries = filteredInquiries.filter(inq => !inq.isDeleted);
+
+            renderInquiryTable(finalInquiries);
+        }
+
+        /**
+         * Filters the `allInquiries` array for the SOURCING DASHBOARD.
+         */
+        function filterAndRenderInquiries_Sourcing() {
+            const searchBar = document.getElementById('search-bar-source');
+            const searchTerm = searchBar ? searchBar.value.toLowerCase() : "";
+
+            let filteredInquiries = allInquiries;
+
+            if (searchTerm) {
+                filteredInquiries = allInquiries.filter(inq => {
+                    return (inq.refNumber?.toString().includes(searchTerm) ||
+                        (inq.clientName || "").toLowerCase().includes(searchTerm) ||
+                        (inq.material || "").toLowerCase().includes(searchTerm) ||
+                        (inq.sourcing_supplier || "").toLowerCase().includes(searchTerm) ||
+                        (inq.status || "").toLowerCase().includes(searchTerm));
+                });
+            }
+
+            // Filter out soft-deleted items from the main dashboard
+            const finalInquiries = filteredInquiries.filter(inq => !inq.isDeleted);
+
+            renderSourcingTable(finalInquiries);
+        }
+
+        /**
+         * Renders the fetched inquiry data into the INQUIRY dashboard table.
+         */
+        function renderInquiryTable(inquiries) {
+            const tableBody = document.getElementById('inquiry-table-body');
+            if (!tableBody) return;
+
+            if (inquiries.length === 0) {
+                tableBody.innerHTML = `
+					<tr>
+						<td colspan="7" class="px-6 py-10 text-center text-gray-500">
+							No inquiries found.
+						</td>
+					</tr>
+				`;
+                return;
+            }
+
+            tableBody.innerHTML = inquiries.map(inq => `
+				<tr class="hover:bg-gray-50" data-inquiry-id="${inq.id}">
+					<td class="px-4 py-4 whitespace-nowrap text-sm">
+						<a href="#" class="ref-link">${getData(inq.refNumber)}</a>
+					</td>
+					<td class="px-4 py-4 whitespace-nowrap text-sm font-medium ${
+                        inq.status === 'Completed' ? 'text-green-600' :
+                        inq.status === 'In Progress' ? 'text-yellow-600' :
+                        inq.status === 'Cancelled' ? 'text-red-600' : 'text-gray-700'
+                    }">${getData(inq.status)}</td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.submittedBy)}</td>
+					<td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${getData(inq.clientName)}</td>
+					<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.material)}</td>
+					<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.quantity)}</td>
+					<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.targetPrice)}</td>
+				</tr>
+			`).join('');
+        }
+
+        /**
+         * Renders the fetched inquiry data into the SOURCING dashboard table.
+         */
+        function renderSourcingTable(inquiries) {
+            const tableBody = document.getElementById('sourcing-table-body');
+            if (!tableBody) return;
+
+            if (inquiries.length === 0) {
+                tableBody.innerHTML = `
+					<tr>
+						<td colspan="11" class="px-6 py-10 text-center text-gray-500">
+							No inquiries found.
+						</td>
+					</tr>
+				`;
+                return;
+            }
+
+            tableBody.innerHTML = inquiries.map(inq => `
+				<tr class="hover:bg-gray-50" data-inquiry-id="${inq.id}">
+					<td class="px-4 py-4 whitespace-nowrap text-sm">
+						<a href="#" class="ref-link">${getData(inq.refNumber)}</a>
+					</td>
+					<td class="px-4 py-4 whitespace-nowrap text-sm font-medium ${
+                        inq.status === 'Completed' ? 'text-green-600' :
+                        inq.status === 'In Progress' ? 'text-yellow-600' :
+                        inq.status === 'Cancelled' ? 'text-red-600' : 'text-gray-700'
+                    }">${getData(inq.status)}</td>
+					<td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${getData(inq.clientName)}</td>
+					<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.material)}</td>
+					<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.sourcing_supplier)}</td>
+					<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.sourcing_price)}</td>
+					
+					<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.sourcing_client_po)}</td>
+					<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.sourcing_client_payment)}</td>
+					<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.sourcing_import_permit)}</td>
+					<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.sourcing_supplier_po)}</td>
+
+					<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600 space-x-2">
+						${inq.sourcing_coa_url ? `<a href="${inq.sourcing_coa_url}" target="_blank" class="text-blue-600 hover:underline">COA</a>` : ''}
+						${inq.sourcing_license_url ? `<a href="${inq.sourcing_license_url}" target="_blank" class="text-blue-600 hover:underline">Lic</a>` : ''}
+						${inq.sourcing_quality_url ? `<a href="${inq.sourcing_quality_url}" target="_blank" class="text-blue-600 hover:underline">Cert</a>` : ''}
+					</td>
+				</tr>
+			`).join('');
+        }
+
+        // --- MODAL LOGIC (For Inquiry Page) ---
+
+        /**
+         * Handles clicks on the inquiry table to open the modal.
+         */
+        function handleInquiryTableClick(e) {
+            if (e.target.classList.contains('ref-link')) {
+                e.preventDefault();
+                const row = e.target.closest('tr');
+                const inquiryId = row.dataset.inquiryId;
+                if (!inquiryId) return;
+
+                const inquiry = allInquiries.find(inq => inq.id === inquiryId);
+                if (inquiry) {
+                    showInquiryModal(inquiry);
+                }
+            }
+        }
+
+        /**
+         * Populates and displays the inquiry modal.
+         */
+        function showInquiryModal(inquiry) {
+            const modal = document.getElementById('inquiryModal');
+            if (!modal) return;
+
+            // --- Populate Static Data ---
+            document.getElementById('modal-ref-num').textContent = getData(inquiry.refNumber);
+            document.getElementById('modal-submittedBy').textContent = getData(inquiry.submittedBy); // AUDIT
+            document.getElementById('modal-clientName').textContent = getData(inquiry.clientName);
+            document.getElementById('modal-organization').textContent = getData(inquiry.organization);
+            document.getElementById('modal-mobileNumber').textContent = getData(inquiry.mobileNumber);
+            document.getElementById('modal-email').textContent = getData(inquiry.email);
+            document.getElementById('modal-material').textContent = getData(inquiry.material);
+            document.getElementById('modal-quantity').textContent = getData(inquiry.quantity);
+            document.getElementById('modal-targetPrice').textContent = getData(inquiry.targetPrice);
+            document.getElementById('modal-recommendedSupplier').textContent = getData(inquiry.recommendedSupplier);
+            document.getElementById('modal-specifications').textContent = getData(inquiry.specifications);
+
+            // --- Populate Status ---
+            const statusSelect = document.getElementById('modal-status-select');
+            statusSelect.value = inquiry.status || "New";
+
+            // --- Populate Notes ---
+            renderModalNotes(inquiry.notes || [], 'modal-notes-list');
+
+            // --- Clear Messages ---
+            document.getElementById('modal-status-message').textContent = "";
+            document.getElementById('modal-note-message').textContent = "";
+            document.getElementById('modal-new-note').value = "";
+
+            // --- Setup Delete/Restore Button (NEW) ---
+            const deleteBtn = document.getElementById('modal-delete-btn');
+            const deleteText = document.getElementById('modal-delete-text');
+            const isDeleted = inquiry.isDeleted === true;
+
+            // Update button appearance
+            deleteBtn.classList.remove(isDeleted ? 'bg-green-500' : 'bg-red-500');
+            deleteBtn.classList.remove(isDeleted ? 'hover:bg-green-600' : 'hover:bg-red-600');
+            deleteBtn.classList.add(isDeleted ? 'bg-green-500' : 'bg-red-500');
+            deleteBtn.classList.add(isDeleted ? 'hover:bg-green-600' : 'hover:bg-red-600');
+            deleteText.textContent = isDeleted ? 'Restore Inquiry' : 'Delete Inquiry';
+
+            // --- Attach Event Listeners ---
+            // Use .onclick to easily replace/remove listeners
+            document.getElementById('modal-close-btn').onclick = closeInquiryModal;
+
+            document.getElementById('modal-status-save').onclick = () => {
+                handleStatusChange(inquiry.id);
+            };
+
+            document.getElementById('modal-note-add').onclick = () => {
+                handleAddNote(inquiry.id);
+            };
+
+            deleteBtn.onclick = () => {
+                handleSoftDelete(inquiry.id, isDeleted);
+            };
+
+            // --- Show Modal ---
+            modal.classList.remove('hidden');
+        }
+
+        /**
+         * Renders the notes list inside the modal.
+         * @param {Array} notes - The array of note objects.
+         * @param {string} listElementId - The ID of the HTML element to render notes into.
+         */
+        function renderModalNotes(notes, listElementId) {
+            const notesList = document.getElementById(listElementId);
+            if (!notesList) return;
+            if (notes.length === 0) {
+                notesList.innerHTML = `<p class="text-gray-500 text-sm">No notes yet.</p>`;
+                return;
+            }
+
+            // Sort notes, newest first. Handle both Firestore Timestamps and local Date objects.
+            notes.sort((a, b) => {
+                const timeA = (a.timestamp && typeof a.timestamp.toMillis === 'function') ?
+                    a.timestamp.toMillis() :
+                    (a.timestamp instanceof Date ? a.timestamp.getTime() : 0);
+                const timeB = (b.timestamp && typeof b.timestamp.toMillis === 'function') ?
+                    b.timestamp.toMillis() :
+                    (b.timestamp instanceof Date ? b.timestamp.getTime() : 0);
+                return timeB - timeA;
+            });
+
+            notesList.innerHTML = notes.map(note => `
+				<div class="bg-white p-3 rounded shadow border border-gray-200">
+					<p class="text-sm text-gray-800">${getData(note.text)}</p>
+					<p class="text-xs text-gray-500 text-right mt-1">
+                        Added by: <b>${getData(note.addedBy)}</b> at ${formatTimestamp(note.timestamp)}
+                    </p>
+				</div>
+			`).join('');
+        }
+
+        /**
+         * Hides the inquiry modal.
+         */
+        function closeInquiryModal() {
+            const modal = document.getElementById('inquiryModal');
+            if (modal) modal.classList.add('hidden');
+            // Remove listeners by setting them to null
+            document.getElementById('modal-close-btn').onclick = null;
+            document.getElementById('modal-status-save').onclick = null;
+            document.getElementById('modal-note-add').onclick = null;
+            document.getElementById('modal-delete-btn').onclick = null; // NEW: Clear delete listener
+        }
+
+        // --- MODAL LOGIC (For Sourcing Page) ---
+
+        /**
+         * Handles clicks on the SOURCING table to open the modal.
+         */
+        function handleSourcingTableClick(e) {
+            if (e.target.classList.contains('ref-link')) {
+                e.preventDefault();
+                const row = e.target.closest('tr');
+                const inquiryId = row.dataset.inquiryId;
+                if (!inquiryId) return;
+
+                const inquiry = allInquiries.find(inq => inq.id === inquiryId);
+                if (inquiry) {
+                    showSourcingModal(inquiry);
+                }
+            }
+        }
+
+        /**
+         * Populates and displays the SOURCING modal.
+         */
+        function showSourcingModal(inquiry) {
+            const modal = document.getElementById('sourcingModal');
+            if (!modal) return;
+
+            // --- Populate Inquiry Data ---
+            document.getElementById('modal-sourcing-ref-num').textContent = getData(inquiry.refNumber);
+            document.getElementById('modal-sourcing-submittedBy').textContent = getData(inquiry.submittedBy); // AUDIT
+            document.getElementById('modal-sourcing-clientName').textContent = getData(inquiry.clientName);
+            document.getElementById('modal-sourcing-organization').textContent = getData(inquiry.organization);
+            document.getElementById('modal-sourcing-material').textContent = getData(inquiry.material);
+            document.getElementById('modal-sourcing-quantity').textContent = getData(inquiry.quantity);
+            document.getElementById('modal-sourcing-targetPrice').textContent = getData(inquiry.targetPrice);
+            document.getElementById('modal-sourcing-specifications').textContent = getData(inquiry.specifications);
+
+            // --- Populate Sourcing Data ---
+            document.getElementById('modal-sourcing-supplier').textContent = getData(inquiry.sourcing_supplier);
+            document.getElementById('modal-sourcing-price').textContent = getData(inquiry.sourcing_price);
+            document.getElementById('modal-sourcing-paymentMethod').textContent = getData(inquiry.sourcing_paymentMethod);
+
+            // Handle file links
+            const coaEl = document.getElementById('modal-sourcing-coa');
+            const licEl = document.getElementById('modal-sourcing-license');
+            const certEl = document.getElementById('modal-sourcing-quality');
+
+            coaEl.innerHTML = inquiry.sourcing_coa_url ? `<a href="${inquiry.sourcing_coa_url}" target="_blank" class="text-blue-600 hover:underline">View File</a>` : 'N/A';
+            licEl.innerHTML = inquiry.sourcing_license_url ? `<a href="${inquiry.sourcing_license_url}" target="_blank" class="text-blue-600 hover:underline">View File</a>` : 'N/A';
+            certEl.innerHTML = inquiry.sourcing_quality_url ? `<a href="${inquiry.sourcing_quality_url}" target="_blank" class="text-blue-600 hover:underline">View File</a>` : 'N/A';
+
+            // --- Populate New Status Dropdowns ---
+            document.getElementById('modal-sourcingClientPO').value = inquiry.sourcing_client_po || "No";
+            document.getElementById('modal-sourcingClientPayment').value = inquiry.sourcing_client_payment || "Not Required";
+            document.getElementById('modal-sourcingImportPermit').value = inquiry.sourcing_import_permit || "Not Required";
+            document.getElementById('modal-sourcingSupplierPO').value = inquiry.sourcing_supplier_po || "Not Yet";
+
+            // --- Populate Notes ---
+            renderModalNotes(inquiry.notes || [], 'modal-sourcing-notes-list');
+
+            // --- Clear Messages ---
+            document.getElementById('modal-sourcing-status-message').textContent = "";
+            document.getElementById('modal-sourcing-note-message').textContent = "";
+            document.getElementById('modal-sourcing-new-note').value = "";
+
+            // --- Setup Delete/Restore Button (NEW) ---
+            const deleteBtn = document.getElementById('modal-sourcing-delete-btn');
+            const deleteText = document.getElementById('modal-sourcing-delete-text');
+            const isDeleted = inquiry.isDeleted === true;
+
+            // Update button appearance
+            deleteBtn.classList.remove(isDeleted ? 'bg-green-500' : 'bg-red-500');
+            deleteBtn.classList.remove(isDeleted ? 'hover:bg-green-600' : 'hover:bg-red-600');
+            deleteBtn.classList.add(isDeleted ? 'bg-green-500' : 'bg-red-500');
+            deleteBtn.classList.add(isDeleted ? 'hover:bg-green-600' : 'hover:bg-red-600');
+            deleteText.textContent = isDeleted ? 'Restore Inquiry' : 'Delete Inquiry';
+
+
+            // --- Attach Event Listeners ---
+            document.getElementById('modal-sourcing-close-btn').onclick = closeSourcingModal;
+
+            document.getElementById('modal-sourcing-status-save').onclick = () => {
+                handleSourcingStatusChange(inquiry.id);
+            };
+
+            document.getElementById('modal-sourcing-note-add').onclick = () => {
+                handleAddNote_Sourcing(inquiry.id);
+            };
+
+            deleteBtn.onclick = () => {
+                handleSoftDelete(inquiry.id, isDeleted);
+            };
+
+            // --- Show Modal ---
+            modal.classList.remove('hidden');
+        }
+
+        /**
+         * Hides the sourcing modal.
+         */
+        function closeSourcingModal() {
+            const modal = document.getElementById('sourcingModal');
+            if (modal) modal.classList.add('hidden');
+            document.getElementById('modal-sourcing-close-btn').onclick = null;
+            document.getElementById('modal-sourcing-status-save').onclick = null;
+            document.getElementById('modal-sourcing-note-add').onclick = null;
+            document.getElementById('modal-sourcing-delete-btn').onclick = null; // NEW: Clear delete listener
+        }
+
+
+        /**
+         * Handles saving a new status from the INQUIRY modal.
+         */
+        async function handleStatusChange(inquiryId) {
+            if (!window.db || !window.fs.doc || !window.fs.updateDoc) {
+                console.error("Firestore not ready");
+                return;
+            }
+
+            const statusSelect = document.getElementById('modal-status-select');
+            const newStatus = statusSelect.value;
+            const messageEl = document.getElementById('modal-status-message');
+            const saveBtn = document.getElementById('modal-status-save');
+            saveBtn.disabled = true;
+
+            // Define path
+            const docRef = window.fs.doc(window.db, INQUIRY_COLLECTION_PATH(window.appId), inquiryId);
+
+            try {
+                await window.fs.updateDoc(docRef, {
+                    status: newStatus,
+                    statusUpdatedBy: window.currentUserName // AUDIT: Log user who updated status
+                });
+                if (messageEl) messageEl.textContent = "Status updated!";
+                // Update local cache
+                const inq = allInquiries.find(i => i.id === inquiryId);
+                if (inq) inq.status = newStatus;
+                // No need to re-render table, snapshot listener will do it
+            } catch (error) {
+                console.error("Error updating status:", error);
+                if (messageEl) messageEl.textContent = "Error updating status.";
+            } finally {
+                saveBtn.disabled = false;
+                setTimeout(() => {
+                    if (messageEl) messageEl.textContent = "";
+                }, 2000);
+            }
+        }
+
+        /**
+         * Handles saving new statuses from the SOURCING modal.
+         */
+        async function handleSourcingStatusChange(inquiryId) {
+            if (!window.db || !window.fs.doc || !window.fs.updateDoc) {
+                console.error("Firestore not ready");
+                return;
+            }
+
+            const messageEl = document.getElementById('modal-sourcing-status-message');
+            const saveBtn = document.getElementById('modal-sourcing-status-save');
+            saveBtn.disabled = true;
+
+            // Get all 4 status values
+            const newStatuses = {
+                sourcing_client_po: document.getElementById('modal-sourcingClientPO').value,
+                sourcing_client_payment: document.getElementById('modal-sourcingClientPayment').value,
+                sourcing_import_permit: document.getElementById('modal-sourcingImportPermit').value,
+                sourcing_supplier_po: document.getElementById('modal-sourcingSupplierPO').value,
+                // AUDIT: Who updated the sourcing fields
+                sourcingUpdatedBy: window.currentUserName 
+            };
+
+            // Define path
+            const docRef = window.fs.doc(window.db, INQUIRY_COLLECTION_PATH(window.appId), inquiryId);
+
+            try {
+                await window.fs.updateDoc(docRef, newStatuses);
+                if (messageEl) messageEl.textContent = "Statuses updated!";
+                // Update local cache
+                const inq = allInquiries.find(i => i.id === inquiryId);
+                if (inq) {
+                    Object.assign(inq, newStatuses); // Merge new statuses into local object
+                }
+                // Snapshot listener will re-render the table
+            } catch (error) {
+                console.error("Error updating sourcing statuses:", error);
+                if (messageEl) messageEl.textContent = "Error updating statuses.";
+            } finally {
+                saveBtn.disabled = false;
+                setTimeout(() => {
+                    if (messageEl) messageEl.textContent = "";
+                }, 2000);
+            }
+        }
+
+        /**
+         * Handles adding a new note from the INQUIRY modal.
+         */
+        async function handleAddNote(inquiryId) {
+            if (!window.db || !window.fs.doc || !window.fs.updateDoc || !window.fs.arrayUnion) {
+                console.error("Firestore not ready");
+                return;
+            }
+
+            const noteTextEl = document.getElementById('modal-new-note');
+            const noteText = noteTextEl.value.trim();
+            if (!noteText) return; // Don't add empty notes
+
+            const messageEl = document.getElementById('modal-note-message');
+            const addBtn = document.getElementById('modal-note-add');
+            addBtn.disabled = true;
+
+            // Define path
+            const docRef = window.fs.doc(window.db, INQUIRY_COLLECTION_PATH(window.appId), inquiryId);
+
+            const newNote = {
+                text: noteText,
+                timestamp: new Date(), // Use local date, will be converted by Firestore
+                addedBy: window.currentUserName // AUDIT: Log user who added note
+            };
+
+            try {
+                await window.fs.updateDoc(docRef, {
+                    notes: window.fs.arrayUnion(newNote)
+                });
+                if (messageEl) messageEl.textContent = "Note added!";
+                noteTextEl.value = ""; // Clear textarea
+
+                // Update local cache and re-render notes
+                const inq = allInquiries.find(i => i.id === inquiryId);
+                if (inq) {
+                    if (!inq.notes) inq.notes = [];
+                    inq.notes.push(newNote); // Add to local cache
+                    renderModalNotes(inq.notes, 'modal-notes-list'); // Re-render this modal's notes
+                }
+            } catch (error) { // FIX: Added brace
+                console.error("Error adding note:", error);
+                if (messageEl) messageEl.textContent = "Error adding note.";
+            } finally {
+                addBtn.disabled = false;
+                setTimeout(() => {
+                    if (messageEl) messageEl.textContent = "";
+                }, 2000);
+            }
+        }
+
+        /**
+         * Handles adding a new note from the SOURCING modal.
+         */
+        async function handleAddNote_Sourcing(inquiryId) {
+            if (!window.db || !window.fs.doc || !window.fs.updateDoc || !window.fs.arrayUnion) {
+                console.error("Firestore not ready");
+                return;
+            }
+
+            const noteTextEl = document.getElementById('modal-sourcing-new-note');
+            const noteText = noteTextEl.value.trim();
+            if (!noteText) return; // Don't add empty notes
+
+            const messageEl = document.getElementById('modal-sourcing-note-message');
+            const addBtn = document.getElementById('modal-sourcing-note-add');
+            addBtn.disabled = true;
+
+            // Define path
+            const docRef = window.fs.doc(window.db, INQUIRY_COLLECTION_PATH(window.appId), inquiryId);
+
+            const newNote = {
+                text: noteText,
+                timestamp: new Date(), // Use local date, will be converted by Firestore
+                addedBy: window.currentUserName // AUDIT: Log user who added note
+            };
+
+            try {
+                await window.fs.updateDoc(docRef, {
+                    notes: window.fs.arrayUnion(newNote)
+                });
+                if (messageEl) messageEl.textContent = "Note added!";
+                noteTextEl.value = ""; // Clear textarea
+
+                // Update local cache and re-render notes
+                const inq = allInquiries.find(i => i.id === inquiryId);
+                if (inq) {
+                    if (!inq.notes) inq.notes = [];
+                    inq.notes.push(newNote); // Add to local cache
+                    renderModalNotes(inq.notes, 'modal-sourcing-notes-list'); // Re-render THIS modal's notes
+                }
+            } catch (error) {
+                console.error("Error adding note:", error);
+                if (messageEl) messageEl.textContent = "Error adding note.";
+            } finally {
+                addBtn.disabled = false;
+                setTimeout(() => {
+                    if (messageEl) messageEl.textContent = "";
+                }, 2000);
+            }
+        }
+
+        // --- NEW ADMIN/DELETION LOGIC ---
+
+        /**
+         * Performs a soft delete (or restore) on an inquiry document.
+         * @param {string} inquiryId - The Firestore document ID.
+         * @param {boolean} isDeleted - The current soft-deleted status.
+         */
+        async function handleSoftDelete(inquiryId, isDeleted) {
+            if (!window.db || !window.fs.doc || !window.fs.updateDoc) {
+                console.error("Firestore not ready for delete.");
+                return;
+            }
+
+            const newDeleteState = !isDeleted;
+            const actionText = newDeleteState ? 'Delete' : 'Restore';
+            const modalId = currentView === 'inq' ? 'inquiryModal' : 'sourcingModal';
+            const messageElId = currentView === 'inq' ? 'modal-status-message' : 'modal-sourcing-status-message';
+            const deleteTextElId = currentView === 'inq' ? 'modal-delete-text' : 'modal-sourcing-delete-text';
+
+            if (!confirm(`Are you sure you want to ${actionText.toLowerCase()} this inquiry (Ref #${allInquiries.find(i => i.id === inquiryId)?.refNumber || 'N/A'})?`)) {
+                return;
+            }
+
+            const messageEl = document.getElementById(messageElId);
+            const deleteTextEl = document.getElementById(deleteTextElId);
+            const originalText = deleteTextEl.textContent;
+            deleteTextEl.textContent = `${actionText}ing...`;
+
+            try {
+                const docRef = window.fs.doc(window.db, INQUIRY_COLLECTION_PATH(window.appId), inquiryId);
+                await window.fs.updateDoc(docRef, {
+                    isDeleted: newDeleteState,
+                    deletedTimestamp: newDeleteState ? window.fs.serverTimestamp() : null
+                });
+
+                if (messageEl) messageEl.textContent = `Inquiry ${actionText.toLowerCase()}d successfully!`;
+
+                // Hide modal after successful action, allowing snapshot to update
+                setTimeout(() => {
+                    if (currentView === 'inq') closeInquiryModal();
+                    else if (currentView === 'source') closeSourcingModal();
+                }, 500);
+
+            } catch (error) {
+                console.error(`Error ${actionText.toLowerCase()}ing inquiry:`, error);
+                if (messageEl) messageEl.textContent = `Error ${actionText.toLowerCase()}ing inquiry.`;
+            } finally {
+                deleteTextEl.textContent = originalText;
+                setTimeout(() => {
+                    if (messageEl) messageEl.textContent = "";
+                }, 3000);
+            }
+        }
+
+        /**
+         * Renders the soft-deleted inquiries in the Admin Console.
+         * @param {Array} deletedInquiries - The array of soft-deleted inquiry objects.
+         */
+        function renderRecycleBinTable(deletedInquiries) {
+            const tableBody = document.getElementById('recycle-bin-table-body');
+            if (!tableBody) return;
+
+            if (deletedInquiries.length === 0) {
+                tableBody.innerHTML = `
+					<tr>
+						<td colspan="5" class="px-6 py-10 text-center text-gray-500">
+							No soft-deleted inquiries.
+						</td>
+					</tr>
+				`;
+                return;
+            }
+
+            tableBody.innerHTML = deletedInquiries.map(inq => `
+				<tr class="hover:bg-red-50" data-inquiry-id="${inq.id}">
+					<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${getData(inq.refNumber)}</td>
+					<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.clientName)}</td>
+					<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.material)}</td>
+					<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatTimestamp(inq.deletedTimestamp)}</td>
+					<td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <button onclick="handleSoftDelete('${inq.id}', true)" class="text-green-600 hover:text-green-900 font-medium mr-4">Restore</button>
+                        <button onclick="handleHardDelete('${inq.id}')" class="text-red-600 hover:text-red-900 font-medium">Delete Permanently</button>
+					</td>
+				</tr>
+			`).join('');
+        }
+
+        /**
+         * Permanently deletes a single inquiry from the database.
+         * @param {string} inquiryId - The Firestore document ID.
+         */
+        async function handleHardDelete(inquiryId) {
+            if (!window.db || !window.fs.doc || !window.fs.deleteDoc) {
+                console.error("Firestore not ready for permanent delete.");
+                return;
+            }
+
+            if (!confirm("DANGER: Are you absolutely sure you want to PERMANENTLY delete this inquiry? This cannot be undone.")) {
+                return;
+            }
+
+            try {
+                const docRef = window.fs.doc(window.db, INQUIRY_COLLECTION_PATH(window.appId), inquiryId);
+                await window.fs.deleteDoc(docRef);
+                alert(`Inquiry successfully and permanently deleted.`);
+
+                // Snapshot listener handles table re-render
+            } catch (error) {
+                console.error("Error permanently deleting document:", error);
+                alert(`Error deleting inquiry: ${error.message}`);
+            }
+        }
+
+        /**
+         * Sets up listeners for the Admin Console buttons.
+         */
+        function setupAdminConsole() {
+            // 1. Reset Database Button
+            const resetBtn = document.getElementById('reset-database-btn');
+            const resetMsg = document.getElementById('reset-message');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', async () => {
+                    if (!confirm("DANGER: Are you sure you want to RESET ALL INQUIRY PROGRESS? This will soft-delete all entries and reset the Ref # counter to 0.")) return;
+
+                    resetBtn.disabled = true;
+                    resetBtn.textContent = "Resetting...";
+                    resetMsg.textContent = "Processing reset operation...";
+                    resetMsg.classList.remove('text-red-500');
+                    resetMsg.classList.add('text-yellow-600');
+
+                    try {
+                        // 1. Soft-Delete all active inquiries
+                        const activeInquiries = allInquiries.filter(i => !i.isDeleted);
+                        const updatePromises = activeInquiries.map(inq => {
+                            const docRef = window.fs.doc(window.db, INQUIRY_COLLECTION_PATH(window.appId), inq.id);
+                            return window.fs.updateDoc(docRef, {
+                                isDeleted: true,
+                                deletedTimestamp: window.fs.serverTimestamp()
+                            });
+                        });
+                        await Promise.all(updatePromises);
+                        console.log(`Soft-deleted ${activeInquiries.length} inquiries.`);
+
+                        // 2. Reset the Counter
+                        const counterRef = window.fs.doc(window.db, COUNTER_DOC_PATH(window.appId));
+                        await window.fs.setDoc(counterRef, {
+                            count: 0
+                        });
+                        console.log("Counter reset to 0.");
+
+                        resetMsg.textContent = `Success: ${activeInquiries.length} inquiries moved to recycle bin. Counter reset to 0.`;
+                        resetMsg.classList.remove('text-yellow-600');
+                        resetMsg.classList.add('text-green-600');
+                    } catch (error) {
+                        console.error("Database reset failed:", error);
+                        resetMsg.textContent = `Critical Error: Database reset failed. ${error.message}`;
+                        resetMsg.classList.remove('text-yellow-600');
+                        resetMsg.classList.add('text-red-600');
+                    } finally {
+                        resetBtn.disabled = false;
+                        resetBtn.textContent = "Reset Inquiry Progress (Back to Ref #1)";
+                        setTimeout(() => {
+                            resetMsg.textContent = "Resets the counter to 0 and soft-deletes all existing inquiries. You must manually delete them permanently from the bin.";
+                            resetMsg.classList.remove('text-green-600', 'text-red-600');
+                            resetMsg.classList.add('text-red-500');
+                        }, 5000);
+                    }
+                });
+            }
+
+            // 2. Hard Delete All Deleted Button
+            const hardDeleteBtn = document.getElementById('hard-delete-deleted-btn');
+            const hardDeleteMsg = document.getElementById('hard-delete-message');
+            if (hardDeleteBtn) {
+                hardDeleteBtn.addEventListener('click', async () => {
+                    if (!confirm("ULTIMATE DANGER: Are you absolutely sure you want to PERMANENTLY DELETE ALL documents currently in the Recycle Bin? THIS CANNOT BE UNDONE.")) return;
+
+                    hardDeleteBtn.disabled = true;
+                    hardDeleteBtn.textContent = "Purging...";
+                    hardDeleteMsg.textContent = "Processing permanent deletion...";
+                    hardDeleteMsg.classList.remove('text-red-600');
+                    hardDeleteMsg.classList.add('text-yellow-600');
+
+                    try {
+                        const deletedInquiries = allInquiries.filter(i => i.isDeleted);
+                        const deletePromises = deletedInquiries.map(inq => {
+                            const docRef = window.fs.doc(window.db, INQUIRY_COLLECTION_PATH(window.appId), inq.id);
+                            return window.fs.deleteDoc(docRef);
+                        });
+                        await Promise.all(deletePromises);
+                        console.log(`Permanently deleted ${deletedInquiries.length} inquiries.`);
+
+                        hardDeleteMsg.textContent = `Success: Permanently deleted ${deletedInquiries.length} inquiries from the database.`;
+                        hardDeleteMsg.classList.remove('text-yellow-600');
+                        hardDeleteMsg.classList.add('text-green-600');
+                    } catch (error) {
+                        console.error("Permanent deletion failed:", error);
+                        hardDeleteMsg.textContent = `Critical Error: Permanent deletion failed. ${error.message}`;
+                        hardDeleteMsg.classList.remove('text-yellow-600');
+                        hardDeleteMsg.classList.add('text-red-600');
+                    } finally {
+                        hardDeleteBtn.disabled = false;
+                        hardDeleteBtn.textContent = "Permanently Delete All in Recycle Bin";
+                        setTimeout(() => {
+                            hardDeleteMsg.textContent = "This action cannot be undone. All documents with 'isDeleted: true' will be purged.";
+                            hardDeleteMsg.classList.remove('text-green-600', 'text-red-600');
+                            hardDeleteMsg.classList.add('text-red-500');
+                        }, 5000);
+                    }
+                });
+            }
+        }
+
+        // --- INITIALIZATION ---
+
+        /**
+         * Runs when the window is fully loaded.
+         */
+        window.onload = () => {
+            // Render the login page first
+            renderLoginPage();
+        };
+    </script>
+</body>
+
+</html>
