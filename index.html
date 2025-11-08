@@ -717,6 +717,270 @@
             if (logoutButton) {
                 logoutButton.addEventListener('click', window.handleUserLogout);
             }
+            setupTabs('inq');
+            setupInquiryForm();
+            listenForInquiries();
+
+            // NEW: Admin button listeners
+            if (isAdmin) {
+                setupAdminConsole();
+            }
+        }
+
+        /**
+         * Clears the app container and renders the Sourcing Dashboard.
+         */
+        function renderSourcingPage() {
+            currentView = 'source';
+            const container = document.getElementById('app-container');
+            if (!container) return;
+
+            container.innerHTML = `
+					<div class="min-h-screen bg-gray-100">
+						<header class="bg-white shadow-md sticky top-0 z-10">
+							<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+								<div class="flex justify-between items-center h-16">
+									<div class="flex items-center">
+										<img src="${JASPER_LOGO_URL}" alt="Jasper Logo" class="h-10" onerror="this.alt='Jasper'; this.src='https://placehold.co/150x40/1e40af/FFFFFF?text=Jasper';">
+										<span class="ml-3 text-xl font-semibold text-gray-700">Sourcing Portal</span>
+                                        <span class="ml-4 text-sm font-light text-gray-500">(${window.currentUserName.toUpperCase()})</span>
+									</div>
+									<button id="logoutButton" class="text-sm font-medium text-red-600 hover:text-red-800 transition duration-150">
+										Logout
+									</button>
+								</div>
+							</div>
+						</header>
+
+						<main class="max-w-screen-xl mx-auto p-4 sm:p-6 lg:p-8">
+							<div class="border-b border-gray-200 mb-6">
+								<nav class="-mb-px flex space-x-8" aria-label="Tabs">
+									<button id="tab-dashboard-source" class="tab-button active text-gray-500 hover:text-gray-700 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+										Sourcing Dashboard
+									</button>
+									<button id="tab-form-source" class="tab-button text-gray-500 hover:text-gray-700 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent">
+										Update Inquiry Form
+									</button>
+								</nav>
+							</div>
+
+							<div>
+								<div id="content-dashboard-source" class="tab-content active">
+									<div class="mb-4">
+										<input type="text" id="search-bar-source" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Search by Ref #, Client, Material, or Supplier...">
+									</div>
+									<h2 class="text-2xl font-semibold text-gray-800 mb-4">Sourcing Dashboard</h2>
+									<div class="bg-white shadow-lg rounded-lg overflow-hidden">
+										<div class="overflow-x-auto">
+											<table class="min-w-full divide-y divide-gray-200">
+												<thead class="bg-gray-50">
+													<tr>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ref #</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sourcing Supplier</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sourcing Price</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client PO</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client Payment</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Import Permit</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier PO</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Certificates</th>
+													</tr>
+												</thead>
+												<tbody id="sourcing-table-body" class="bg-white divide-y divide-gray-200">
+													<tr>
+														<td colspan="11" class="px-6 py-10 text-center text-gray-500">
+															Loading inquiries...
+														</td>
+													</tr>
+												</tbody>
+											</table>
+										</div>
+									</div>
+								</div>
+
+								<div id="content-form-source" class="tab-content">
+									<h2 class="text-2xl font-semibold text-gray-800 mb-4">Update Sourcing Details</h2>
+									<div class="bg-white shadow-lg rounded-lg p-6 md:p-8">
+										<form id="new-sourcing-form" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+											<div class="md:col-span-1">
+												<label for="sourcingRefNum" class="block text-sm font-medium text-gray-700">Inquiry Ref #</label>
+												<input type="number" id="sourcingRefNum" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent" placeholder="e.g., 2" required>
+											</div>
+											<div class="md:col-span-2">
+												</div>
+
+											<hr class="md:col-span-3 my-2">
+
+											<div class="md:col-span-1">
+												<label for="sourcingSupplier" class="block text-sm font-medium text-gray-700">Supplier</label>
+												<input type="text" id="sourcingSupplier" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent">
+											</div>
+											<div class="md:col-span-1">
+												<label for="sourcingPrice" class="block text-sm font-medium text-gray-700">Price</label>
+												<input type="text" id="sourcingPrice" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent">
+											</div>
+											<div class="md:col-span-1">
+												<label for="sourcingPaymentMethod" class="block text-sm font-medium text-gray-700">Payment Method</label>
+												<input type="text" id="sourcingPaymentMethod" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent">
+											</div>
+											
+											<hr class="md:col-span-3 my-2">
+											
+											<div class="md:col-span-1">
+												<label for="sourcingClientPO" class="block text-sm font-medium text-gray-700">Client PO</label>
+												<select id="sourcingClientPO" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
+													<option value="No">No</option>
+													<option value="Yes">Yes</option>
+												</select>
+											</div>
+											<div class="md:col-span-1">
+												<label for="sourcingClientPayment" class="block text-sm font-medium text-gray-700">Client Payment</label>
+												<select id="sourcingClientPayment" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
+													<option value="Not Required">Not Required</option>
+													<option value="Required">Required</option>
+													<option value="Collected">Collected</option>
+												</select>
+											</div>
+											<div class="md:col-span-1">
+												<label for="sourcingImportPermit" class="block text-sm font-medium text-gray-700">Import Permit</label>
+												<select id="sourcingImportPermit" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
+													<option value="Not Required">Not Required</option>
+													<option value="Pending">Pending</option>
+													<option value="Completed">Completed</option>
+												</select>
+											</div>
+											<div class="md:col-span-1">
+												<label for="sourcingSupplierPO" class="block text-sm font-medium text-gray-700">Supplier PO</label>
+												<select id="sourcingSupplierPO" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
+													<option value="Not Yet">Not Yet</option>
+													<option value="Sent">Sent</option>
+												</select>
+											</div>
+
+											<hr class="md:col-span-3 my-2">
+
+											<div class="md:col-span-1">
+												<label for="sourcingCOA" class="block text-sm font-medium text-gray-700">COA (File Link)</label>
+												<input type="text" id="sourcingCOA" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Paste link to file...">
+											</div>
+											<div class="md:col-span-1">
+												<label for="sourcingLicense" class="block text-sm font-medium text-gray-700">License (File Link)</label>
+												<input type="text" id="sourcingLicense" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent">
+											</div>
+											<div class="md:col-span-1">
+												<label for="sourcingQualityCert" class="block text-sm font-medium text-gray-700">Quality Certificate (GMP/ISO)</label>
+												<input type="text" id="sourcingQualityCert" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent">
+											</div>
+
+											<div class="md:col-span-3 flex justify-end items-center gap-4 mt-4">
+												<span id="sourcing-form-message" class="text-sm"></span>
+												<button type="submit" id="submit-sourcing-form-btn" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-800 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-800">
+													Update Inquiry
+												</button>
+											</div>
+										</form>
+									</div>
+								</div>
+							</div>
+						</main>
+					</div>
+					
+					<div id="sourcingModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+						<div class="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
+							<div class="flex justify-between items-center border-b pb-3 mb-4">
+								<h3 class="text-2xl font-semibold text-gray-900">Sourcing Details (Ref #: <span id="modal-sourcing-ref-num"></span>)</h3>
+								<button id="modal-sourcing-close-btn" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center">
+									<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+								</button>
+							</div>
+							<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+								<div class="md:col-span-1">
+									<h4 class="text-lg font-semibold text-gray-800 mb-2">Original Inquiry</h4>
+									<dl class="divide-y divide-gray-200">
+										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Client</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-clientName"></dd></div>
+										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Org</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-organization"></dd></div>
+										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Material</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-material"></dd></div>
+										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Quantity</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-quantity"></dd></div>
+										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Target Price</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-targetPrice"></dd></div>
+										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Specs</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 whitespace-pre-wrap" id="modal-sourcing-specifications"></dd></div>
+									</dl>
+									<hr class="my-4">
+									<h4 class="text-lg font-semibold text-gray-800 mb-2">Sourcing Data</h4>
+									<dl class="divide-y divide-gray-200">
+										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Supplier</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-supplier"></dd></div>
+										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Price</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-price"></dd></div>
+										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Payment</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-paymentMethod"></dd></div>
+										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">COA</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-coa"></dd></div>
+										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">License</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-license"></dd></div>
+										<div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">Certificate</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2" id="modal-sourcing-quality"></dd></div>
+									</dl>
+								</div>
+
+								<div class="md:col-span-1">
+									<h4 class="text-lg font-semibold text-gray-800 mb-2">Update Sourcing Status</h4>
+									<div class="space-y-4">
+										<div>
+											<label for="modal-sourcingClientPO" class="block text-sm font-medium text-gray-700">Client PO</label>
+											<select id="modal-sourcingClientPO" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
+												<option value="No">No</option>
+												<option value="Yes">Yes</option>
+											</select>
+										</div>
+										<div>
+											<label for="modal-sourcingClientPayment" class="block text-sm font-medium text-gray-700">Client Payment</label>
+											<select id="modal-sourcingClientPayment" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
+												<option value="Not Required">Not Required</option>
+												<option value="Required">Required</option>
+												<option value="Collected">Collected</option>
+											</select>
+										</div>
+										<div>
+											<label for="modal-sourcingImportPermit" class="block text-sm font-medium text-gray-700">Import Permit</label>
+											<select id="modal-sourcingImportPermit" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
+												<option value="Not Required">Not Required</option>
+												<option value="Pending">Pending</option>
+												<option value="Completed">Completed</option>
+											</select>
+										</div>
+										<div>
+											<label for="modal-sourcingSupplierPO" class="block text-sm font-medium text-gray-700">Supplier PO</label>
+											<select id="modal-sourcingSupplierPO" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800">
+												<option value="Not Yet">Not Yet</option>
+												<option value="Sent">Sent</option>
+											</select>
+										</div>
+									</div>
+									<button id="modal-sourcing-status-save" class="w-full mt-6 px-4 py-2 bg-blue-800 text-white text-sm font-medium rounded-md hover:bg-blue-700">Save Statuses</button>
+									<span id="modal-sourcing-status-message" class="text-sm text-green-600 mt-2 block"></span>
+
+                                    <button id="modal-sourcing-delete-btn" class="w-full mt-4 px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-md hover:bg-red-600">
+                                        <span id="modal-sourcing-delete-text">Delete Inquiry</span>
+                                    </button>
+                                    </div>
+
+								<div class="bg-gray-50 p-4 rounded-lg flex flex-col h-full max-h-[70vh] md:col-span-1">
+									<h4 class="text-lg font-semibold text-gray-800 mb-2">Notes</h4>
+									<div id="modal-sourcing-notes-list" class="flex-grow overflow-y-auto space-y-3 mb-4 pr-2">
+										<p class="text-gray-500 text-sm">No notes yet.</p>
+									</div>
+									<div class="flex-shrink-0">
+										<textarea id="modal-sourcing-new-note" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800" rows="3" placeholder="Add a new note..."></textarea>
+										<button id="modal-sourcing-note-add" class="w-full mt-2 px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-500">Add Note</button>
+										<span id="modal-sourcing-note-message" class="text-sm text-green-600 mt-2 block"></span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				`;
+
+            // Add event listeners for the new page
+            const logoutButton = document.getElementById('logoutButton');
+            if (logoutButton) {
+                logoutButton.addEventListener('click', window.handleUserLogout);
+            }
             setupTabs('source');
             setupSourcingForm();
             listenForInquiries_Sourcing();
