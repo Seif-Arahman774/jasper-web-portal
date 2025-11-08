@@ -775,7 +775,8 @@
             const finalConfirmation = window.confirm("ABSOLUTELY FINAL WARNING: Are you sure you want to PERMANENTLY delete ALL data and reset the system? This cannot be undone.");
             if (!finalConfirmation) return;
 
-            if (!window.db || !window.fs.getDocs || !window.fs.deleteDoc || !window.fs.setDoc) {
+            // BUG FIX: Check for writeBatch
+            if (!window.db || !window.fs.getDocs || !window.fs.deleteDoc || !window.fs.setDoc || !window.fs.writeBatch) {
                 messageEl.textContent = "Error: Database services not available.";
                 return;
             }
@@ -793,7 +794,7 @@
                 
                 let deleteCount = 0;
                 // =============================================
-                // ==== BUG FIX: Use writeBatch(db) ====
+                // ==== BUG FIX: Use window.fs.writeBatch(window.db) ====
                 // =============================================
                 const batch = window.fs.writeBatch(window.db); 
                 snapshot.docs.forEach((doc) => {
@@ -847,7 +848,9 @@
             const user = document.getElementById('loginUser').value.trim();
             const pass = document.getElementById('loginPass').value.trim();
 
-            // --- NEW AUTHENTICATION LOGIC ---
+            // =============================================
+            // ==== BUG FIX: NEW AUTHENTICATION LOGIC ====
+            // =============================================
             if (user === 'admin' && pass === '123456') {
                 console.log("Login successful: Admin");
                 if (loginError) loginError.classList.add('hidden');
@@ -873,6 +876,7 @@
                     loginError.classList.remove('hidden');
                 }
             }
+            // =============================================
         }
 
         /**
