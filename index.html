@@ -518,7 +518,7 @@
                                             <tbody id="trash-table-body" class="bg-white divide-y divide-gray-200">
                                                 <tr>
                                                     <td colspan="5" class="px-6 py-10 text-center text-gray-500">
-                                                        Trash is empty.
+                                                        Loading trash...
                                                     </td>
                                                 </tr>
                                             </tbody>
@@ -689,7 +689,7 @@
             setupSourcingForm();
             listenForInquiries_Sourcing();
         }
-
+        
         /**
          * Clears the app container and renders the Admin Console.
          */
@@ -921,8 +921,10 @@
                     if (button.id === 'tab-trash') {
                         listenForTrashedInquiries();
                     } else if (window.trashUnsubscribe) {
+                        // If we click *off* the trash tab, stop its listener
                         window.trashUnsubscribe();
                         window.trashUnsubscribe = null;
+                        console.log("Unsubscribed from trash listener.");
                     }
                 });
             });
@@ -999,8 +1001,21 @@
 
                     // 3. Show success message and reset form
                     if (formMessage) formMessage.textContent = "Inquiry submitted successfully!";
-                    form.reset();
-
+                    
+                    // =============================================
+                    // ==== BUG FIX: Manual form reset ====
+                    // =============================================
+                    document.getElementById('clientName').value = '';
+                    document.getElementById('mobileNumber').value = '';
+                    document.getElementById('email').value = '';
+                    document.getElementById('organization').value = '';
+                    document.getElementById('material').value = '';
+                    document.getElementById('quantity').value = '';
+                    document.getElementById('specifications').value = '';
+                    document.getElementById('recommendedSupplier').value = '';
+                    document.getElementById('targetPrice').value = '';
+                    // =============================================
+                    
                     // 4. Automatically switch to the dashboard to see the new entry
                     setTimeout(() => {
                         const dashboardTab = document.getElementById('tab-dashboard');
@@ -1034,7 +1049,11 @@
                 console.log("Sourcing Form submitted");
 
                 if (!window.db || !window.fs || !window.fs.query || !window.fs.getDocs || !window.fs.where || !window.fs.updateDoc) {
-                    // ... (error handling) ...
+                    const formMessage = document.getElementById('sourcing-form-message');
+                    if (formMessage) {
+                        formMessage.textContent = "Error: Database connection lost. Please try again.";
+                        formMessage.className = "text-sm text-red-600";
+                    }
                     return;
                 }
 
@@ -1044,7 +1063,10 @@
                 const refNumber = parseInt(refNumInput.value.trim());
 
                 if (isNaN(refNumber)) {
-                    // ... (error handling) ...
+                    if (formMessage) {
+                        formMessage.textContent = "Please enter a valid Ref #.";
+                        formMessage.className = "text-sm text-red-600";
+                    }
                     return;
                 }
 
@@ -1091,7 +1113,22 @@
                             formMessage.textContent = `Inquiry #${refNumber} updated successfully!`;
                             formMessage.className = "text-sm text-green-600";
                         }
-                        form.reset();
+                        
+                        // =============================================
+                        // ==== BUG FIX: Manual form reset ====
+                        // =============================================
+                        document.getElementById('sourcingRefNum').value = '';
+                        document.getElementById('sourcingSupplier').value = '';
+                        document.getElementById('sourcingPrice').value = '';
+                        document.getElementById('sourcingPaymentMethod').value = '';
+                        document.getElementById('sourcingCOA').value = '';
+                        document.getElementById('sourcingLicense').value = '';
+                        document.getElementById('sourcingQualityCert').value = '';
+                        document.getElementById('sourcingClientPO').value = 'No'; // Reset dropdowns to default
+                        document.getElementById('sourcingClientPayment').value = 'Not Required';
+                        document.getElementById('sourcingImportPermit').value = 'Not Required';
+                        document.getElementById('sourcingSupplierPO').value = 'Not Yet';
+                        // =============================================
 
                         // 5. Automatically switch to the dashboard to see the new entry
                         setTimeout(() => {
@@ -1103,7 +1140,13 @@
 
                 } catch (error) {
                     console.error("Error updating document: ", error);
-                    // ... (error handling) ...
+                    if (formMessage) {
+                        formMessage.textContent = "Error: Could not submit form.";
+                        formMessage.className = "text-sm text-red-600";
+                    }
+                    if (error.code === 'permission-denied') {
+                        if (formMessage) formMessage.textContent = "Error: You don't have permission to save data.";
+                    }
                 } finally {
                     if (submitButton) submitButton.disabled = false;
                     if (submitButton) submitButton.textContent = "Update Inquiry";
@@ -1118,7 +1161,8 @@
          */
         function listenForInquiries() {
             if (!window.db || !window.fs || !window.fs.onSnapshot) {
-                // ... (error handling) ...
+                const tableBody = document.getElementById('inquiry-table-body');
+                if (tableBody) tableBody.innerHTML = `<tr><td colspan="10" class="px-6 py-10 text-center text-red-600">Error: Not connected to database.</td></tr>`;
                 return;
             }
 
@@ -1153,7 +1197,6 @@
 
                 }, (error) => {
                     console.error("Error with Firestore listener:", error);
-                    // ... (error handling) ...
                 });
 
                 // Attach search bar listener
@@ -1271,7 +1314,7 @@
                     filterAndRenderInquiries_Sourcing(); // Call SOURCING filter function
 
                 }, (error) => {
-                    // ... (error handling) ...
+                    console.error("Error with Sourcing listener:", error)
                 });
 
                 // Attach search bar listener
@@ -1827,12 +1870,6 @@
                 if(messageEl) messageEl.textContent = "Note added!";
                 messageEl.className = "text-sm text-green-600 mt-2 block";
                 noteTextEl.value = ""; 
-                
-                // Note: We don't manually re-render notes here anymore
-                // because the snapshot listener will catch the update
-                // (even on a sub-field) and re-render the whole table,
-                // which re-runs the query. If this is slow, we can 
-                // re-add the local cache update logic.
                 
             } catch (error) { 
                 console.error("Error adding note:", error);
