@@ -83,7 +83,8 @@
                     arrayUnion, // Needed for adding notes
                     getDocs, // Needed for Sourcing form query
                     where, // Needed for Sourcing form query
-                    deleteDoc // <-- Needed for permanent delete
+                    deleteDoc, // <-- Needed for permanent delete
+                    writeBatch // <-- BUG FIX: Added for Admin Delete
                 } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
 
                 // --- Initialize Firebase ---
@@ -106,7 +107,8 @@
                     arrayUnion,
                     getDocs,
                     where,
-                    deleteDoc 
+                    deleteDoc,
+                    writeBatch // <-- BUG FIX: Added for Admin Delete
                 };
 
                 // Enable debug logging for Firestore
@@ -790,9 +792,10 @@
                 const snapshot = await window.fs.getDocs(q);
                 
                 let deleteCount = 0;
-                // Firestore batches are limited, but for a few hundred documents this is fine.
-                // For thousands, we'd need to loop batches.
-                const batch = window.db.batch(); 
+                // =============================================
+                // ==== BUG FIX: Use writeBatch(db) ====
+                // =============================================
+                const batch = window.fs.writeBatch(window.db); 
                 snapshot.docs.forEach((doc) => {
                     batch.delete(doc.ref);
                     deleteCount++;
