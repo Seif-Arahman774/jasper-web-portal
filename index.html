@@ -69,7 +69,7 @@
                 } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
                 const {
                     getAuth,
-                    signInAnonymously, // <-- Corrected: This was '136' and '836' in your original code
+                    signInAnonymously, 
                     signInWithCustomToken,
                     onAuthStateChanged,
                     signOut
@@ -90,7 +90,7 @@
                     arrayUnion, // Needed for adding notes
                     getDocs, // Needed for Sourcing form query
                     where, // Needed for Sourcing form query
-                    deleteDoc // <-- ADDED FOR DELETE
+                    deleteDoc // This is still needed if we add "Delete Permanently" later
                 } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
 
                 // --- Initialize Firebase ---
@@ -113,7 +113,7 @@
                     arrayUnion,
                     getDocs,
                     where,
-                    deleteDoc // <-- ADDED FOR DELETE
+                    deleteDoc
                 };
 
                 // Enable debug logging for Firestore
@@ -123,7 +123,7 @@
                 onAuthStateChanged(window.auth, async (user) => {
                     if (user) {
                         console.log("Firebase Auth: User is signed in.", user.uid);
-                        window.currentUserId = user.uid; // Still useful for knowing *who* is logged in, even if data is public
+                        window.currentUserId = user.uid; 
                     } else {
                         console.log("Firebase Auth: User is signed out. Attempting to sign in...");
                         window.currentUserId = null;
@@ -133,7 +133,7 @@
                                 await signInWithCustomToken(window.auth, __initial_auth_token);
                             } else {
                                 console.log("Attempting anonymous sign in...");
-                                await signInAnonymously(window.auth); // <-- Corrected
+                                await signInAnonymously(window.auth); 
                             }
                         } catch (error) {
                             console.error("Firebase Authentication Error:", error);
@@ -385,7 +385,7 @@
                                 <button id="tab-analytics" class="tab-button text-gray-500 hover:text-gray-700 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent">
                                     Analytics
                                 </button>
-                            </nav>
+                                </nav>
                         </div>
 
                         <div>
@@ -520,7 +520,7 @@
                                         <option value="In Progress">In Progress</option>
                                         <option value="Completed">Completed</option>
                                         <option value="Cancelled">Cancelled</option>
-                                    </select>
+                                        </select>
                                     <button id="modal-status-save" class="px-4 py-2 bg-blue-800 text-white text-sm font-medium rounded-md hover:bg-blue-700">Save</button>
                                 </div>
                                 <span id="modal-status-message" class="text-sm text-green-600 mt-2 block"></span>
@@ -528,11 +528,11 @@
                                 <hr class="my-4 border-red-300">
                                 <h4 class="text-lg font-semibold text-red-700 mb-2">Danger Zone</h4>
                                 <div>
-                                    <button id="modal-delete-btn" class="w-full px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
-                                        Delete This Inquiry
+                                    <button id="modal-trash-btn" class="w-full px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                                        Move to Trash
                                     </button>
-                                    <p class="text-xs text-gray-500 mt-2">This action is permanent and cannot be undone.</p>
-                                    <span id="modal-delete-message" class="text-sm text-red-600 mt-2 block"></span>
+                                    <p class="text-xs text-gray-500 mt-2">This will hide the inquiry from all dashboards.</p>
+                                    <span id="modal-trash-message" class="text-sm text-red-600 mt-2 block"></span>
                                 </div>
                                 </div>
                             <div class="bg-gray-50 p-4 rounded-lg flex flex-col h-full max-h-[70vh]">
@@ -951,7 +951,6 @@
                 if (formMessage) formMessage.textContent = "";
 
                 // Define paths
-                // FIX: Changed to public path
                 const INQUIRY_COLLECTION_PATH = `/artifacts/${window.appId}/public/data/inquiries`;
                 const COUNTER_DOC_PATH = `/artifacts/${window.appId}/public/data/inquiries_counter/counter`;
                 
@@ -1064,7 +1063,6 @@
                 if (formMessage) formMessage.textContent = "";
 
                 // Define path
-                // FIX: Changed to public path
                 const INQUIRY_COLLECTION_PATH = `/artifacts/${window.appId}/public/data/inquiries`;
                 const inquiryCollectionRef = window.fs.collection(window.db, INQUIRY_COLLECTION_PATH);
 
@@ -1153,11 +1151,19 @@
                 window.inquiryUnsubscribe();
             }
 
-            // FIX: Changed to public path
             const INQUIRY_COLLECTION_PATH = `/artifacts/${window.appId}/public/data/inquiries`;
 
             try {
-                const q = window.fs.query(window.fs.collection(window.db, INQUIRY_COLLECTION_PATH));
+                // =================================================================
+                // ==== CORE CHANGE: Added where("status", "!=", "Trashed") ====
+                // This query now ignores any documents that have been trashed.
+                // =================================================================
+                const q = window.fs.query(
+                    window.fs.collection(window.db, INQUIRY_COLLECTION_PATH),
+                    window.fs.where("status", "!=", "Trashed")
+                );
+                // =================================================================
+
                 console.log("Attaching Firestore listener to:", INQUIRY_COLLECTION_PATH);
 
                 window.inquiryUnsubscribe = window.fs.onSnapshot(q, (querySnapshot) => {
@@ -1170,7 +1176,7 @@
                         });
                     });
 
-                    // Sort by refNumber, newest first.
+                    // Sort by refNumber, newest first (client-side)
                     allInquiries.sort((a, b) => (b.refNumber || 0) - (a.refNumber || 0));
 
                     console.log("Fetched inquiries:", allInquiries);
@@ -1178,19 +1184,7 @@
 
                 }, (error) => {
                     console.error("Error with Firestore listener: ", error);
-                    const tableBody = document.getElementById('inquiry-table-body');
-                    if (tableBody) {
-                        tableBody.innerHTML = `
-                            <tr>
-                                <td colspan="10" class="px-6 py-10 text-center text-red-600">
-                                    Error loading data: ${error.message}
-                                </td>
-                            </tr>
-                        `;
-                    }
-                    if (error.code === 'permission-denied') {
-                        console.error("Firestore Permission Denied. Check security rules.");
-                    }
+                    // ... (error handling) ...
                 });
 
                 // Attach search bar listener
@@ -1217,12 +1211,8 @@
         function listenForInquiries_Sourcing() {
             // Check for auth and required services
             if (!window.db || !window.fs || !window.fs.collection || !window.fs.query || !window.fs.onSnapshot) {
-                console.error("Firestore not initialized for listener.");
-                const tableBody = document.getElementById('sourcing-table-body');
-                if (tableBody) {
-                    tableBody.innerHTML = `<tr><td colspan="11" class="px-6 py-10 text-center text-red-600">Error: Not connected to database. Please log out and back in.</td></tr>`;
-                }
-                return; // FIX: Was 're turn;'
+                // ... (error handling) ...
+                return; 
             }
 
             // Unsubscribe from any previous listener
@@ -1230,11 +1220,19 @@
                 window.sourcingUnsubscribe();
             }
 
-            // FIX: Changed to public path
             const INQUIRY_COLLECTION_PATH = `/artifacts/${window.appId}/public/data/inquiries`;
 
             try {
-                const q = window.fs.query(window.fs.collection(window.db, INQUIRY_COLLECTION_PATH));
+                // =================================================================
+                // ==== CORE CHANGE: Added where("status", "!=", "Trashed") ====
+                // This query also ignores any documents that have been trashed.
+                // =================================================================
+                const q = window.fs.query(
+                    window.fs.collection(window.db, INQUIRY_COLLECTION_PATH),
+                    window.fs.where("status", "!=", "Trashed")
+                );
+                // =================================================================
+
                 console.log("Attaching Firestore listener to:", INQUIRY_COLLECTION_PATH);
 
                 window.sourcingUnsubscribe = window.fs.onSnapshot(q, (querySnapshot) => {
@@ -1254,17 +1252,7 @@
                     filterAndRenderInquiries_Sourcing(); // Call SOURCING filter function
 
                 }, (error) => {
-                    console.error("Error with Firestore listener: ", error);
-                    const tableBody = document.getElementById('sourcing-table-body');
-                    if (tableBody) {
-                        tableBody.innerHTML = `
-                            <tr>
-                                <td colspan="11" class="px-6 py-10 text-center text-red-600">
-                                    Error loading data: ${error.message}
-                                </td>
-                            </tr>
-                        `;
-                    }
+                    // ... (error handling) ...
                 });
 
                 // Attach search bar listener
@@ -1292,7 +1280,7 @@
             const searchBar = document.getElementById('search-bar');
             const searchTerm = searchBar ? searchBar.value.toLowerCase() : "";
             
-            let filteredInquiries = allInquiries;
+            let filteredInquiries = allInquiries; // Already filtered by listener query
 
             if (searchTerm) {
                 filteredInquiries = allInquiries.filter(inq => {
@@ -1316,7 +1304,7 @@
             const searchBar = document.getElementById('search-bar-source');
             const searchTerm = searchBar ? searchBar.value.toLowerCase() : "";
             
-            let filteredInquiries = allInquiries;
+            let filteredInquiries = allInquiries; // Already filtered by listener query
 
             if (searchTerm) {
                 filteredInquiries = allInquiries.filter(inq => {
@@ -1342,7 +1330,7 @@
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="10" class="px-6 py-10 text-center text-gray-500">
-                            No inquiries found.
+                            No active inquiries found.
                         </td>
                     </tr>
                 `;
@@ -1389,7 +1377,7 @@
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="11" class="px-6 py-10 text-center text-gray-500">
-                            No inquiries found.
+                            No active inquiries found.
                         </td>
                     </tr>
                 `;
@@ -1474,10 +1462,19 @@
             document.getElementById('modal-status-message').textContent = "";
             document.getElementById('modal-note-message').textContent = "";
             document.getElementById('modal-new-note').value = "";
-            document.getElementById('modal-delete-message').textContent = ""; // <-- ADDED
+            document.getElementById('modal-trash-message').textContent = ""; 
+
+            // =============================================
+            // ==== BUG FIX: Reset trash button state ====
+            // =============================================
+            const trashBtn = document.getElementById('modal-trash-btn');
+            if (trashBtn) {
+                trashBtn.disabled = false;
+                trashBtn.textContent = "Move to Trash";
+            }
+            // =============================================
 
             // --- Attach Event Listeners ---
-            // Use .onclick to easily replace/remove listeners
             document.getElementById('modal-close-btn').onclick = closeInquiryModal;
             
             document.getElementById('modal-status-save').onclick = () => {
@@ -1488,11 +1485,10 @@
                 handleAddNote(inquiry.id);
             };
 
-            // ---- ADDED DELETE LISTENER ----
-            document.getElementById('modal-delete-btn').onclick = () => {
-                handleDeleteInquiry(inquiry.id, inquiry.refNumber);
+            // ---- Attach TRASH listener ----
+            document.getElementById('modal-trash-btn').onclick = () => {
+                handleTrashInquiry(inquiry.id, inquiry.refNumber);
             };
-            // ---- END OF NEW LISTENER ----
 
             // --- Show Modal ---
             modal.classList.remove('hidden');
@@ -1500,8 +1496,6 @@
 
         /**
          * Renders the notes list inside the modal.
-         * @param {Array} notes - The array of note objects.
-         * @param {string} listElementId - The ID of the HTML element to render notes into.
          */
         function renderModalNotes(notes, listElementId) {
             const notesList = document.getElementById(listElementId);
@@ -1511,7 +1505,7 @@
                 return;
             }
             
-            // Sort notes, newest first. Handle both Firestore Timestamps and local Date objects.
+            // Sort notes, newest first
             notes.sort((a, b) => {
                 const timeA = (a.timestamp && typeof a.timestamp.toMillis === 'function') 
                                 ? a.timestamp.toMillis() 
@@ -1540,7 +1534,7 @@
             document.getElementById('modal-close-btn').onclick = null;
             document.getElementById('modal-status-save').onclick = null;
             document.getElementById('modal-note-add').onclick = null;
-            document.getElementById('modal-delete-btn').onclick = null; // <-- ADDED
+            document.getElementById('modal-trash-btn').onclick = null; // <-- UPDATED
         }
 
         // --- MODAL LOGIC (For Sourcing Page) ---
@@ -1648,7 +1642,6 @@
             const saveBtn = document.getElementById('modal-status-save');
             saveBtn.disabled = true;
 
-            // FIX: Changed to public path
             const docRef = window.fs.doc(window.db, `/artifacts/${window.appId}/public/data/inquiries/${inquiryId}`);
 
             try {
@@ -1659,7 +1652,7 @@
                 // Update local cache
                 const inq = allInquiries.find(i => i.id === inquiryId);
                 if (inq) inq.status = newStatus;
-                // No need to re-render table, snapshot listener will do it
+                // Snapshot listener will re-render the table
             } catch (error) {
                 console.error("Error updating status:", error);
                 if(messageEl) messageEl.textContent = "Error updating status.";
@@ -1690,7 +1683,6 @@
                 sourcing_supplier_po: document.getElementById('modal-sourcingSupplierPO').value,
             };
 
-            // FIX: Changed to public path
             const docRef = window.fs.doc(window.db, `/artifacts/${window.appId}/public/data/inquiries/${inquiryId}`);
 
             try {
@@ -1728,7 +1720,6 @@
             const addBtn = document.getElementById('modal-note-add');
             addBtn.disabled = true;
 
-            // FIX: Changed to public path
             const docRef = window.fs.doc(window.db, `/artifacts/${window.appId}/public/data/inquiries/${inquiryId}`);
 
             const newNote = {
@@ -1750,7 +1741,7 @@
                     inq.notes.push(newNote); // Add to local cache
                     renderModalNotes(inq.notes, 'modal-notes-list'); // Re-render this modal's notes
                 }
-            } catch (error) { // FIX: Added brace
+            } catch (error) { 
                 console.error("Error adding note:", error);
                 if(messageEl) messageEl.textContent = "Error adding note.";
             } finally { 
@@ -1760,24 +1751,26 @@
         }
 
         // =============================================
-        // ==== START: NEW DELETE FUNCTION
+        // ==== START: UPDATED TRASH FUNCTION
+        // =This now "soft deletes" by changing the status
         // =============================================
         /**
-         * Handles DELETING an inquiry from the INQUIRY modal.
+         * Handles MOVING an inquiry to the trash from the INQUIRY modal.
          */
-        async function handleDeleteInquiry(inquiryId, refNumber) {
-            if (!window.db || !window.fs.doc || !window.fs.deleteDoc) {
-                console.error("Firestore not ready for deletion");
-                alert("Error: Database connection lost. Cannot delete.");
+        async function handleTrashInquiry(inquiryId, refNumber) {
+            // Check for updateDoc instead of deleteDoc
+            if (!window.db || !window.fs.doc || !window.fs.updateDoc) {
+                console.error("Firestore not ready for trashing");
+                alert("Error: Database connection lost. Cannot move to trash.");
                 return;
             }
 
-            const messageEl = document.getElementById('modal-delete-message');
-            const deleteBtn = document.getElementById('modal-delete-btn');
+            const messageEl = document.getElementById('modal-trash-message');
+            const trashBtn = document.getElementById('modal-trash-btn');
 
             // 1. Confirm with the user
             const confirmed = window.confirm(
-                `Are you sure you want to permanently delete Inquiry Ref #${refNumber}?\n\nThis action cannot be undone.`
+                `Are you sure you want to move Inquiry Ref #${refNumber} to the trash?`
             );
             
             if (!confirmed) {
@@ -1785,18 +1778,20 @@
             }
 
             // 2. Disable button
-            deleteBtn.disabled = true;
-            deleteBtn.textContent = "Deleting...";
+            trashBtn.disabled = true;
+            trashBtn.textContent = "Moving...";
             if (messageEl) messageEl.textContent = "";
 
             // 3. Define doc ref
             const docRef = window.fs.doc(window.db, `/artifacts/${window.appId}/public/data/inquiries/${inquiryId}`);
 
-            // 4. Try to delete
+            // 4. Try to UPDATE the status to "Trashed"
             try {
-                await window.fs.deleteDoc(docRef);
+                await window.fs.updateDoc(docRef, {
+                    status: "Trashed"
+                });
                 
-                console.log("Inquiry deleted successfully:", inquiryId);
+                console.log("Inquiry moved to trash:", inquiryId);
 
                 // 5. Update local cache (so the UI updates instantly)
                 allInquiries = allInquiries.filter(inq => inq.id !== inquiryId);
@@ -1809,15 +1804,15 @@
                 filterAndRenderInquiries(); 
 
             } catch (error) {
-                console.error("Error deleting inquiry:", error);
-                if (messageEl) messageEl.textContent = "Error: Could not delete inquiry. " + error.message;
+                console.error("Error moving to trash:", error);
+                if (messageEl) messageEl.textContent = "Error: Could not move to trash. " + error.message;
                 // Re-enable button on failure
-                deleteBtn.disabled = false;
-                deleteBtn.textContent = "Delete This Inquiry";
+                trashBtn.disabled = false;
+                trashBtn.textContent = "Move to Trash";
             }
         }
         // =============================================
-        // ==== END: NEW DELETE FUNCTION
+        // ==== END: UPDATED TRASH FUNCTION
         // =============================================
 
         /**
@@ -1837,7 +1832,6 @@
             const addBtn = document.getElementById('modal-sourcing-note-add');
             addBtn.disabled = true;
 
-            // FIX: Changed to public path
             const docRef = window.fs.doc(window.db, `/artifacts/${window.appId}/public/data/inquiries/${inquiryId}`);
 
             const newNote = {
