@@ -403,7 +403,7 @@
 							</div>
 						</header>
 
-						<main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+						<main class="max-w-screen-xl mx-auto p-4 sm:p-6 lg:p-8">
 							<div class="border-b border-gray-200 mb-6">
 								<nav class="-mb-px flex space-x-8" aria-label="Tabs">
 									<button id="tab-dashboard" class="tab-button active text-gray-500 hover:text-gray-700 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
@@ -430,16 +430,16 @@
 											<table class="min-w-full divide-y divide-gray-200">
 												<thead class="bg-gray-50">
 													<tr>
-														<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ref #</th>
-														<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-														<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
-														<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client Name</th>
-														<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material</th>
-														<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-														<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-														<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organization</th>
-														<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target Price</th>
-														<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rec. Supplier</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ref #</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client Name</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organization</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target Price</th>
+														<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rec. Supplier</th>
 													</tr>
 												</thead>
 												<tbody id="inquiry-table-body" class="bg-white divide-y divide-gray-200">
@@ -1303,27 +1303,27 @@
 
             tableBody.innerHTML = inquiries.map(inq => `
 				<tr class="hover:bg-gray-50" data-inquiry-id="${inq.id}">
-					<td class="px-6 py-4 whitespace-nowrap text-sm">
+					<td class="px-4 py-4 whitespace-nowrap text-sm">
 						<a href="#" class="ref-link">${getData(inq.refNumber)}</a>
 					</td>
-					<td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${
+					<td class="px-4 py-4 whitespace-nowrap text-sm font-medium ${
                         inq.status === 'Completed' ? 'text-green-600' :
                         inq.status === 'In Progress' ? 'text-yellow-600' :
                         inq.status === 'Cancelled' ? 'text-red-600' : 'text-gray-700'
                     }">${getData(inq.status)}</td>
-					<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatTimestamp(inq.timestamp)}</td>
-					<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${getData(inq.clientName)}</td>
-					<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.material)}</td>
-					<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.quantity)}</td>
-					<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+					<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">${formatTimestamp(inq.timestamp)}</td>
+					<td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${getData(inq.clientName)}</td>
+					<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.material)}</td>
+					<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.quantity)}</td>
+					<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
 						<div class="truncate w-36">${getData(inq.mobileNumber)}</div>
 						<div class="truncate w-36 text-xs text-gray-500">${getData(inq.email)}</div>
 					</td>
-					<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+					<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
 						<div class="truncate w-36">${getData(inq.organization)}</div>
 					</td>
-					<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.targetPrice)}</td>
-					<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+					<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">${getData(inq.targetPrice)}</td>
+					<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
 						<div class="truncate w-36">${getData(inq.recommendedSupplier)}</div>
 					</td>
 				</tr>
