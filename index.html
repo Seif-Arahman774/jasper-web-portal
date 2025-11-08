@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+f    <!DOCTYPE html>
     <html lang="en">
 
     <head>
@@ -93,9 +93,18 @@
                     } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
 
                     // --- Initialize Firebase ---
-                    window.app = initializeApp(firebaseConfig);
+try {
+                                    window.app = initializeApp(firebaseConfig);
                     window.db = getFirestore(window.app);
                     window.auth = getAuth(window.app);
+                } catch (error) {
+                    console.error('Firebase initialization error:', error);
+                    // Gracefully handle initialization failure
+                    window.app = null;
+                    window.db = null;
+                    window.auth = null;
+                    console.log('Firebase Auth initialization failed. Using local authentication only.');
+                }
 
                     // Assign firestore functions to window.fs for easy access
                     window.fs = {
