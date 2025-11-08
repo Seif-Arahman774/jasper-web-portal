@@ -846,25 +846,6 @@ try {
                 e.preventDefault();
                 const loginError = document.getElementById('loginError');
 
-        // FALLBACK: Try hardcoded credentials first (for local auth when Firebase is unavailable)
-        const user = document.getElementById('loginUser').value.trim();
-        const pass = document.getElementById('loginPass').value.trim();
-        if ((user === 'inq' && pass === '123') || (user === 'source' && pass === '456')) {
-            // Set a fake user ID for compatibility
-            window.currentUserId = 'local_user_' + user;
-            localStorage.setItem('jasperAuthUser', user);
-            console.log('Local authentication successful:', user);
-            // Skip Firebase checks and proceed directly
-            if (user === 'inq') {
-                renderInquiryPage();
-            } else if (user === 'source') {
-                setupTabs('source');
-                setupSourcingForm();
-                listenForInquiries_Sourcing();
-            }
-            return;
-        }
-
                 // FIX: Check for auth *after* initialization attempt
                 if (!window.auth) {
                     console.error("Firebase Auth not available.");
