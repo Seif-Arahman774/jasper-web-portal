@@ -731,7 +731,7 @@
             e.preventDefault();
             const loginError = document.getElementById('loginError');
 
-/*            // FIX: Check for auth *after* initialization attempt
+  // FIX: Check for auth *after* initialization attempt
             if (!window.auth) {
                 console.error("Firebase Auth not available.");
                 if (loginError) {
@@ -748,7 +748,7 @@
                     loginError.classList.remove('hidden');
                 }
                 return;
-            } */
+            }
 
             // Get values and trim whitespace
             const user = document.getElementById('loginUser').value.trim();
