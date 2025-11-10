@@ -56,7 +56,7 @@
             (typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
 
 
-        // --- Firebase Initialization ---
+        // === Firebase Initialization ---
         async function initializeFirebase() {
             try {
                 const firebaseConfig = JSON.parse(firebaseConfigString);
@@ -104,7 +104,7 @@
                     deleteDoc // NEW: For permanent delete
                 } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
 
-                // --- Initialize Firebase ---
+                // === Initialize Firebase ---
                 try {
                     window.app = initializeApp(firebaseConfig);
                     window.db = getFirestore(window.app);
@@ -139,7 +139,7 @@
                 // Enable debug logging for Firestore
                 setLogLevel('Debug');
 
-                // --- Authentication ---
+                // === Authentication ---
                 onAuthStateChanged(window.auth, async (user) => {
                     if (user) {
                         console.log("Firebase Auth: User is signed in.", user.uid);
@@ -255,16 +255,16 @@
     </div>
 
     <script>
-        // --- CONSTANTS ---
+        // === CONSTANTS ---
         const JASPER_LOGO_URL = "https://jasperegypt.com/home/wp-content/uploads/2023/12/logooo1-1.png"; // Updated logo URL
         const INQUIRY_COLLECTION_PATH = (appId) => `/artifacts/${appId}/public/data/inquiries`;
         const COUNTER_DOC_PATH = (appId) => `/artifacts/${appId}/public/data/inquiries_counter/counter`;
 
-        // --- STATE ---
+        // === STATE ---
         let currentView = 'login'; // 'login', 'inq', 'source'
         let allInquiries = []; // Holds the full list of inquiries for searching
 
-        // --- UTILITY FUNCTIONS ---
+        // === UTILITY FUNCTIONS ---
 
         /**
          * Formats a Firestore timestamp (or Date object) into a readable string.
@@ -314,7 +314,7 @@
             return value || 'N/A';
         }
 
-        // --- PAGE RENDERING FUNCTIONS ---
+        // === PAGE RENDERING FUNCTIONS ---
 
         /**
          * Clears the app container and renders the Login Page.
@@ -722,7 +722,7 @@
             setupInquiryForm();
             listenForInquiries();        }
 
-        // --- EVENT HANDLERS & LOGIC ---
+        // === EVENT HANDLERS & LOGIC ---
             listenForInquiries();        /**
          * Handles the main login form submission.
          * UPDATED LOGIN CREDENTIALS
@@ -1369,7 +1369,7 @@
 			`).join('');
         }
 
-        // --- MODAL LOGIC (For Inquiry Page) ---
+        // === MODAL LOGIC (For Inquiry Page) ---
 
         /**
          * Handles clicks on the inquiry table to open the modal.
@@ -1395,7 +1395,7 @@
             const modal = document.getElementById('inquiryModal');
             if (!modal) return;
 
-            // --- Populate Static Data ---
+            // === Populate Static Data ---
             document.getElementById('modal-ref-num').textContent = getData(inquiry.refNumber);
             document.getElementById('modal-submittedBy').textContent = getData(inquiry.submittedBy); // AUDIT
             document.getElementById('modal-clientName').textContent = getData(inquiry.clientName);
@@ -1408,19 +1408,19 @@
             document.getElementById('modal-recommendedSupplier').textContent = getData(inquiry.recommendedSupplier);
             document.getElementById('modal-specifications').textContent = getData(inquiry.specifications);
 
-            // --- Populate Status ---
+            // === Populate Status ---
             const statusSelect = document.getElementById('modal-status-select');
             statusSelect.value = inquiry.status || "New";
 
-            // --- Populate Notes ---
+            // === Populate Notes ---
             renderModalNotes(inquiry.notes || [], 'modal-notes-list');
 
-            // --- Clear Messages ---
+            // === Clear Messages ---
             document.getElementById('modal-status-message').textContent = "";
             document.getElementById('modal-note-message').textContent = "";
             document.getElementById('modal-new-note').value = "";
 
-            // --- Setup Delete/Restore Button (NEW) ---
+            // === Setup Delete/Restore Button (NEW) ---
             const deleteBtn = document.getElementById('modal-delete-btn');
             const deleteText = document.getElementById('modal-delete-text');
             const isDeleted = inquiry.isDeleted === true;
@@ -1432,7 +1432,7 @@
             deleteBtn.classList.add(isDeleted ? 'hover:bg-green-600' : 'hover:bg-red-600');
             deleteText.textContent = isDeleted ? 'Restore Inquiry' : 'Delete Inquiry';
 
-            // --- Attach Event Listeners ---
+            // === Attach Event Listeners ---
             // Use .onclick to easily replace/remove listeners
             document.getElementById('modal-close-btn').onclick = closeInquiryModal;
 
@@ -1448,7 +1448,7 @@
                 handleSoftDelete(inquiry.id, isDeleted);
             };
 
-            // --- Show Modal ---
+            // === Show Modal ---
             modal.classList.remove('hidden');
         }
 
@@ -1499,7 +1499,7 @@
             document.getElementById('modal-delete-btn').onclick = null; // NEW: Clear delete listener
         }
 
-        // --- MODAL LOGIC (For Sourcing Page) ---
+        // === MODAL LOGIC (For Sourcing Page) ---
 
         /**
          * Handles clicks on the SOURCING table to open the modal.
@@ -1525,7 +1525,7 @@
             const modal = document.getElementById('sourcingModal');
             if (!modal) return;
 
-            // --- Populate Inquiry Data ---
+            // === Populate Inquiry Data ---
             document.getElementById('modal-sourcing-ref-num').textContent = getData(inquiry.refNumber);
             document.getElementById('modal-sourcing-submittedBy').textContent = getData(inquiry.submittedBy); // AUDIT
             document.getElementById('modal-sourcing-clientName').textContent = getData(inquiry.clientName);
@@ -1535,7 +1535,7 @@
             document.getElementById('modal-sourcing-targetPrice').textContent = getData(inquiry.targetPrice);
             document.getElementById('modal-sourcing-specifications').textContent = getData(inquiry.specifications);
 
-            // --- Populate Sourcing Data ---
+            // === Populate Sourcing Data ---
             document.getElementById('modal-sourcing-supplier').textContent = getData(inquiry.sourcing_supplier);
             document.getElementById('modal-sourcing-price').textContent = getData(inquiry.sourcing_price);
             document.getElementById('modal-sourcing-paymentMethod').textContent = getData(inquiry.sourcing_paymentMethod);
@@ -1549,21 +1549,21 @@
             licEl.innerHTML = inquiry.sourcing_license_url ? `<a href="${inquiry.sourcing_license_url}" target="_blank" class="text-blue-600 hover:underline">View File</a>` : 'N/A';
             certEl.innerHTML = inquiry.sourcing_quality_url ? `<a href="${inquiry.sourcing_quality_url}" target="_blank" class="text-blue-600 hover:underline">View File</a>` : 'N/A';
 
-            // --- Populate New Status Dropdowns ---
+            // === Populate New Status Dropdowns ---
             document.getElementById('modal-sourcingClientPO').value = inquiry.sourcing_client_po || "No";
             document.getElementById('modal-sourcingClientPayment').value = inquiry.sourcing_client_payment || "Not Required";
             document.getElementById('modal-sourcingImportPermit').value = inquiry.sourcing_import_permit || "Not Required";
             document.getElementById('modal-sourcingSupplierPO').value = inquiry.sourcing_supplier_po || "Not Yet";
 
-            // --- Populate Notes ---
+            // === Populate Notes ---
             renderModalNotes(inquiry.notes || [], 'modal-sourcing-notes-list');
 
-            // --- Clear Messages ---
+            // === Clear Messages ---
             document.getElementById('modal-sourcing-status-message').textContent = "";
             document.getElementById('modal-sourcing-note-message').textContent = "";
             document.getElementById('modal-sourcing-new-note').value = "";
 
-            // --- Setup Delete/Restore Button (NEW) ---
+            // === Setup Delete/Restore Button (NEW) ---
             const deleteBtn = document.getElementById('modal-sourcing-delete-btn');
             const deleteText = document.getElementById('modal-sourcing-delete-text');
             const isDeleted = inquiry.isDeleted === true;
@@ -1576,7 +1576,7 @@
             deleteText.textContent = isDeleted ? 'Restore Inquiry' : 'Delete Inquiry';
 
 
-            // --- Attach Event Listeners ---
+            // === Attach Event Listeners ---
             document.getElementById('modal-sourcing-close-btn').onclick = closeSourcingModal;
 
             document.getElementById('modal-sourcing-status-save').onclick = () => {
@@ -1591,7 +1591,7 @@
                 handleSoftDelete(inquiry.id, isDeleted);
             };
 
-            // --- Show Modal ---
+            // === Show Modal ---
             modal.classList.remove('hidden');
         }
 
@@ -1795,7 +1795,7 @@
             }
         }
 
-        // --- NEW ADMIN/DELETION LOGIC ---
+        // === NEW ADMIN/DELETION LOGIC ---
 
         /**
          * Performs a soft delete (or restore) on an inquiry document.
@@ -2008,7 +2008,7 @@
             }
         }
 
-        // --- INITIALIZATION ---
+        // === INITIALIZATION ---
 
         /**
          * Runs when the window is fully loaded.
