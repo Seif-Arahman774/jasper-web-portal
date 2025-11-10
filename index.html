@@ -771,8 +771,7 @@
                      (user === 'source3' && pass === '789')) {
                 console.log(`Login successful: Sourcing (${user})`);
                 window.currentUserName = user;
-                window.location.href = 'recov.html';                successfulLogin = true;
-            } 
+                localStorage.setItem('sourceUser', user); window.location.href = 'recov.html';            } 
             // Check Admin login (retained from previous version)
             else if (user === 'admin' && pass === '789') { 
                 console.log("Login successful: Admin");
