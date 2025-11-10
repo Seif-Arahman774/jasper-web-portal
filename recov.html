@@ -1177,6 +1177,7 @@
                         status: "New", // Default status
                         notes: [], // Default empty notes array
                         isDeleted: false // NEW: Default to not deleted
+						            submittedBy: window.currentUserName || 'Unknown' // Track who created this inquiry
                     };
 
                     // 2. Run a transaction to get the new ref number and save
