@@ -1287,6 +1287,7 @@
                         sourcing_client_payment: document.getElementById('sourcingClientPayment').value,
                         sourcing_import_permit: document.getElementById('sourcingImportPermit').value,
                         sourcing_supplier_po: document.getElementById('sourcingSupplierPO').value,
+						            sourcing_submittedBy: window.currentUserName || 'Unknown',
                     };
 
                     // 2. Find the document with the matching refNumber
@@ -2277,6 +2278,16 @@
          * Runs when the window is fully loaded.
          */
         window.onload = () => {
+			    // Check if a source user was redirected from index.html
+			    const sourceUser = localStorage.getItem('sourceUser');
+			    if (sourceUser) {
+					        // Auto-login the source user
+					        localStorage.removeItem('sourceUser'); // Clear it after use
+					        window.currentUserName = sourceUser;
+					        renderSourcingPage();
+					        return;
+					    }
+			
             // Render the login page first
             renderLoginPage();
         };
