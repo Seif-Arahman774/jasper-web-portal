@@ -2278,21 +2278,29 @@
         /**
          * Runs when the window is fully loaded.
          */
-        window.onload = () => {
-			    // Check if a source user was redirected from index.html
-			    const sourceUser = localStorage.getItem('sourceUser');
-			    if (sourceUser) {
-					        // Auto-login the source user
-					        localStorage.removeItem('sourceUser'); // Clear it after use
-					        window.currentUserName = sourceUser;
-					        renderSourcingPage();
-					        return;
-					    }
-			
-            // Render the login page first
-            renderLoginPage();
-        };
-    </script>
+// Wait for Firebase to initialize, then check for source user redirect
+async function initializeAndRender() {
+    // Wait for Firebase initialization to complete
+    await initializeFirebase();
+    
+    // Check if a source user was redirected from index.html
+    const sourceUser = localStorage.getItem('sourceUser');
+    if (sourceUser) {
+        // Auto-login the source user
+        localStorage.removeItem('sourceUser'); // Clear it after use
+        window.currentUserName = sourceUser;
+        renderSourcingPage();
+        return;
+    }
+    
+    // Render the login page first
+    renderLoginPage();
+}
+
+// Call initialization when page loads
+window.onload = () => {
+    initializeAndRender();
+};    </script>
 </body>
 
 </html>
