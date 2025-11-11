@@ -2282,7 +2282,8 @@
 async function initializeAndRender() {
     // Wait for Firebase initialization to complete
     await initializeFirebase();
-    
+
+	
     // Check if a source user was redirected from index.html
     const sourceUser = localStorage.getItem('sourceUser');
     if (sourceUser) {
@@ -2291,6 +2292,7 @@ async function initializeAndRender() {
         window.currentUserName = sourceUser;
         renderSourcingPage();
         return;
+    
     }
     
     // Render the login page first
