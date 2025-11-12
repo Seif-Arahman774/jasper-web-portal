@@ -2280,7 +2280,13 @@
     initializeFirebase();
 
 // Call initialization immediately
-renderLoginPage();
+// Wait for DOM to be ready before rendering
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderLoginPage);
+} else {
+    // DOM is already ready
+    renderLoginPage();
+}
 
 
     ript></body>
