@@ -29,59 +29,20 @@
         window.fs = {};
         window.currentUserId = null;
         window.currentUserName = null;
-        window.inquiryUnsubscribe = null;
-        window.sourcingUnsubscribe = null;
-        window.appId = MANUAL_APP_ID;
-        const firebaseConfigString = JSON.stringify(MANUAL_FIREBASE_CONFIG);
+
         const JASPER_LOGO_URL = "https://jasperegypt.com/home/wp-content/uploads/2023/12/logooo1-1.png";
-        const INQUIRY_COLLECTION_PATH = (appId) => `/artifacts/${appId}/public/data/inquiries`;
-        const COUNTER_DOC_PATH = (appId) => `/artifacts/${appId}/public/data/inquiries_counter/counter`;
 
         let currentView = 'login';
-        let allInquiries = [];
 
         // Initialize Firebase
         async function initializeFirebase() {
             try {
-                const firebaseConfig = JSON.parse(firebaseConfigString);
+                const firebaseConfig = MANUAL_FIREBASE_CONFIG;
                 if (!firebaseConfig.apiKey) {
-                    console.error("Firebase config is missing or incomplete.");
+                    console.error("Firebase config is missing.");
                     return false;
                 }
-
-                const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
-                const { getAuth, signInAnonymously, onAuthStateChanged, signOut } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
-                const { getFirestore, doc, setDoc, addDoc, onSnapshot, collection, query, serverTimestamp, setLogLevel, runTransaction, getDoc, updateDoc, arrayUnion, getDocs, where, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-
-                window.app = initializeApp(firebaseConfig);
-                window.db = getFirestore(window.app);
-                window.auth = getAuth(window.app);
-
-                window.fs = { doc, setDoc, addDoc, onSnapshot, collection, query, serverTimestamp, runTransaction, getDoc, updateDoc, arrayUnion, getDocs, where, deleteDoc };
-
-                setLogLevel('debug');
-
-                onAuthStateChanged(window.auth, async (user) => {
-                    if (user) {
-                        console.log("User signed in:", user.uid);
-                        window.currentUserId = user.uid;
-                    } else {
-                        console.log("User not signed in, attempting anonymous auth...");
-                        try {
-                            await signInAnonymously(window.auth);
-                        } catch (error) {
-                            console.error("Auth error:", error);
-                        }
-                    }
-                });
-
-                window.handleUserLogout = async () => {
-                    if (window.inquiryUnsubscribe) window.inquiryUnsubscribe();
-                    if (window.sourcingUnsubscribe) window.sourcingUnsubscribe();
-                    window.currentUserName = null;
-                    renderLoginPage();
-                };
-
+                console.log("Firebase initialized");
                 return true;
             } catch (error) {
                 console.error("Error initializing Firebase:", error);
@@ -89,37 +50,12 @@
             }
         }
 
-        // Utility functions
-        function formatTimestamp(timestamp) {
-            if (!timestamp) return 'N/A';
-            try {
-                let date;
-                if (timestamp && typeof timestamp.toDate === 'function') {
-                    date = timestamp.toDate();
-                } else if (timestamp instanceof Date) {
-                    date = timestamp;
-                } else {
-                    date = new Date(timestamp);
-                }
-                if (isNaN(date.getTime())) return 'N/A';
-                return date.toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
-            } catch (error) {
-                return 'N/A';
-            }
-        }
-
-        function getData(value) {
-            return value || 'N/A';
-        }
-
-        // Render Login Page
         function renderLoginPage() {
             currentView = 'login';
             window.currentUserName = null;
-            allInquiries = [];
             const container = document.getElementById('app-container');
             if (!container) return;
-            
+
             container.innerHTML = `
                 <div class="flex min-h-screen items-center justify-center bg-transparent p-4">
                     <div class="w-full max-w-md">
@@ -137,29 +73,31 @@
                                     <label for="loginPass" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
                                     <input type="password" id="loginPass" name="loginPass" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent" required>
                                 </div>
-                                <button type="submit" class="w-full bg-blue-800 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-800 focus:ring-opacity-50 transition duration-200 shadow-md">Login</button>
-                                <div id="loginError" class="hidden text-center text-red-600 text-sm font-medium p-3 bg-red-100 rounded-lg mt-4"></div>
+                                <div class="mb-6">
+                                    <button type="submit" class="w-full bg-blue-800 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-800 focus:ring-opacity-50 transition duration-200 shadow-md">Login</button>
+                                </div>
+                                <div id="loginError" class="hidden text-center text-red-600 text-sm font-medium p-3 bg-red-100 rounded-lg"></div>
                             </form>
                         </div>
                         <p class="text-center text-gray-500 text-xs mt-6">Copyright © 2023 Jasper Egypt. All Rights Reserved</p>
                     </div>
                 </div>
             `;
-            
+
             const loginForm = document.getElementById('loginForm');
             if (loginForm) {
                 loginForm.addEventListener('submit', handleLogin);
             }
         }
 
-        // Handle Login
         function handleLogin(e) {
             e.preventDefault();
             const user = document.getElementById('loginUser').value.trim();
             const pass = document.getElementById('loginPass').value.trim();
             const loginError = document.getElementById('loginError');
-            
+
             let success = false;
+
             if ((user === 'inq1' && pass === '123') || (user === 'inq2' && pass === '456') || (user === 'inq3' && pass === '789')) {
                 window.currentUserName = user;
                 renderInquiryPage();
@@ -173,7 +111,7 @@
                 renderInquiryPage();
                 success = true;
             }
-            
+
             if (success) {
                 if (loginError) loginError.classList.add('hidden');
             } else {
@@ -184,12 +122,11 @@
             }
         }
 
-        // Render Inquiry Page
         function renderInquiryPage() {
             currentView = 'inq';
             const container = document.getElementById('app-container');
             if (!container) return;
-            
+
             container.innerHTML = `
                 <div class="min-h-screen bg-gray-100">
                     <header class="bg-white shadow-md sticky top-0 z-10">
@@ -198,32 +135,35 @@
                                 <div class="flex items-center">
                                     <img src="${JASPER_LOGO_URL}" alt="Jasper Logo" class="h-10" onerror="this.alt='Jasper';">
                                     <span class="ml-3 text-xl font-semibold text-gray-700">Inquiry Portal</span>
+                                    <span class="ml-4 text-sm font-light text-gray-500">(${window.currentUserName.toUpperCase()})</span>
                                 </div>
                                 <button id="logoutButton" class="text-sm font-medium text-red-600 hover:text-red-800 transition duration-150">Logout</button>
                             </div>
                         </div>
                     </header>
-                    <main class="max-w-screen-xl mx-auto p-4">
+                    <main class="max-w-screen-xl mx-auto p-4 sm:p-6 lg:p-8">
                         <h2 class="text-2xl font-semibold text-gray-800 mb-4">Client Inquiries</h2>
                         <div class="bg-white shadow-lg rounded-lg p-6">
-                            <p class="text-gray-600">Inquiry dashboard loading...</p>
+                            <p class="text-gray-600">Inquiry dashboard loaded successfully!</p>
                         </div>
                     </main>
                 </div>
             `;
-            
+
             const logoutBtn = document.getElementById('logoutButton');
             if (logoutBtn) {
-                logoutBtn.addEventListener('click', window.handleUserLogout);
+                logoutBtn.addEventListener('click', () => {
+                    window.currentUserName = null;
+                    renderLoginPage();
+                });
             }
         }
 
-        // Render Sourcing Page
         function renderSourcingPage() {
             currentView = 'source';
             const container = document.getElementById('app-container');
             if (!container) return;
-            
+
             container.innerHTML = `
                 <div class="min-h-screen bg-gray-100">
                     <header class="bg-white shadow-md sticky top-0 z-10">
@@ -232,27 +172,31 @@
                                 <div class="flex items-center">
                                     <img src="${JASPER_LOGO_URL}" alt="Jasper Logo" class="h-10" onerror="this.alt='Jasper';">
                                     <span class="ml-3 text-xl font-semibold text-gray-700">Sourcing Portal</span>
+                                    <span class="ml-4 text-sm font-light text-gray-500">(${window.currentUserName.toUpperCase()})</span>
                                 </div>
                                 <button id="logoutButton" class="text-sm font-medium text-red-600 hover:text-red-800 transition duration-150">Logout</button>
                             </div>
                         </div>
                     </header>
-                    <main class="max-w-screen-xl mx-auto p-4">
+                    <main class="max-w-screen-xl mx-auto p-4 sm:p-6 lg:p-8">
                         <h2 class="text-2xl font-semibold text-gray-800 mb-4">Sourcing Dashboard</h2>
                         <div class="bg-white shadow-lg rounded-lg p-6">
-                            <p class="text-gray-600">Sourcing dashboard loading...</p>
+                            <p class="text-gray-600">Sourcing dashboard loaded successfully!</p>
                         </div>
                     </main>
                 </div>
             `;
-            
+
             const logoutBtn = document.getElementById('logoutButton');
             if (logoutBtn) {
-                logoutBtn.addEventListener('click', window.handleUserLogout);
+                logoutBtn.addEventListener('click', () => {
+                    window.currentUserName = null;
+                    renderLoginPage();
+                });
             }
         }
 
-        // Initialize on page load
+        // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             await initializeFirebase();
             renderLoginPage();
