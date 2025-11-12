@@ -2299,10 +2299,13 @@ async function initializeAndRender() {
     renderLoginPage();
 }
 
-// Call initialization when page loads
-// Call initialization immediately
-initializeAndRender();
 
+		        // Call initialization
+        initializeFirebase();
+        window.onload = () => {
+            // Render the login page first
+            renderLoginPage();
+        };
 </script></body>
 
 </html>
